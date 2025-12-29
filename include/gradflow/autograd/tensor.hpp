@@ -74,7 +74,8 @@ public:
      * @param allocator Device allocator (defaults to CPU allocator)
      * @throws std::invalid_argument if data size doesn't match shape
      */
-    Tensor(const Shape& shape, const std::vector<T>& data,
+    Tensor(const Shape& shape,
+           const std::vector<T>& data,
            std::shared_ptr<DeviceAllocator> allocator = nullptr)
         : storage_(std::make_shared<Storage<T>>(shape.size(), allocator)),
           shape_(shape),
@@ -96,7 +97,9 @@ public:
      */
     Tensor(std::initializer_list<std::initializer_list<T>> data,
            std::shared_ptr<DeviceAllocator> allocator = nullptr)
-        : shape_(), stride_(shape_), offset_(0) {
+        : shape_(),
+          stride_(shape_),
+          offset_(0) {
         size_t rows = data.size();
         if (rows == 0) {
             throw std::invalid_argument("Cannot create tensor from empty data");
@@ -450,7 +453,9 @@ public:
      * @param allocator Device allocator (defaults to CPU allocator)
      * @return Tensor with random values
      */
-    static Tensor<T> randn(const Shape& shape, T mean = T(0), T stddev = T(1),
+    static Tensor<T> randn(const Shape& shape,
+                           T mean = T(0),
+                           T stddev = T(1),
                            std::shared_ptr<DeviceAllocator> allocator = nullptr) {
         Tensor<T> result(shape, allocator);
 
@@ -533,9 +538,14 @@ private:
     /**
      * @brief Internal constructor for creating views
      */
-    Tensor(std::shared_ptr<Storage<T>> storage, const Shape& shape, const Stride& stride,
+    Tensor(std::shared_ptr<Storage<T>> storage,
+           const Shape& shape,
+           const Stride& stride,
            size_t offset)
-        : storage_(storage), shape_(shape), stride_(stride), offset_(offset) {}
+        : storage_(storage),
+          shape_(shape),
+          stride_(stride),
+          offset_(offset) {}
 
     /**
      * @brief Helper function to copy data to a contiguous tensor
