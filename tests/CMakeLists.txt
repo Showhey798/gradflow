@@ -65,6 +65,11 @@ endfunction()
 # Core Tests
 # ========================================
 
+# Shape tests
+fullscratch_add_test(shape_test
+    SOURCES test_shape.cpp
+)
+
 # Optimizer tests
 fullscratch_add_test(optimizer_test
     SOURCES test_optimizer.cpp
@@ -118,6 +123,7 @@ fullscratch_add_test(optimizer_test
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --verbose
     DEPENDS
+        shape_test
         optimizer_test
         # matrix_test
         # vector_test
