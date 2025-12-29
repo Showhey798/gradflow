@@ -70,6 +70,11 @@ fullscratch_add_test(shape_test
     SOURCES test_shape.cpp
 )
 
+# Storage tests
+fullscratch_add_test(storage_test
+    SOURCES test_storage.cpp
+)
+
 # Optimizer tests
 fullscratch_add_test(optimizer_test
     SOURCES test_optimizer.cpp
@@ -124,6 +129,7 @@ add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --verbose
     DEPENDS
         shape_test
+        storage_test
         optimizer_test
         # matrix_test
         # vector_test
