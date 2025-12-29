@@ -123,14 +123,15 @@ fullscratch_add_test(optimizer_test
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --verbose
     DEPENDS
-        matrix_test
-        vector_test
-        activation_test
-        loss_test
-        neural_network_test
+        shape_test
         optimizer_test
-        data_loader_test
-        integration_test
+        # matrix_test
+        # vector_test
+        # activation_test
+        # loss_test
+        # neural_network_test
+        # data_loader_test
+        # integration_test
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running all tests with verbose output"
 )

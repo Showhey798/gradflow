@@ -47,5 +47,8 @@ endfunction()
 
 # Custom target to build all examples
 add_custom_target(examples
+    # DEPENDS
+    #     matrix_operations
+    #     simple_neural_network
     COMMENT "Building all examples"
 )
