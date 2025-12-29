@@ -87,10 +87,11 @@ jobs:
             build_type: Release
 
           # macOS - AppleClang
-          - os: macos-13
-            compiler: apple-clang
-            version: 14
-            build_type: Release
+          # Note: macos-13 is no longer available in GitHub Actions
+          # - os: macos-13
+          #   compiler: apple-clang
+          #   version: 14
+          #   build_type: Release
 
           - os: macos-14
             compiler: apple-clang
@@ -124,35 +125,32 @@ jobs:
         run: |
           conan install . --output-folder=build --build=missing -s build_type=${{ matrix.build_type }}
 
-      - name: Configure CMake
+      - name: Detect CMake preset
+        id: preset
         shell: bash
         run: |
-          # Windows uses conan-default, Linux/macOS use conan-release
-          if [ -f CMakePresets.json ] && grep -q '"conan-default"' CMakePresets.json; then
-            cmake --preset conan-default
+          # Detect which preset is available
+          if [ -f CMakePresets.json ]; then
+            if grep -q '"conan-default"' CMakePresets.json; then
+              echo "PRESET_NAME=conan-default" >> $GITHUB_OUTPUT
+            else
+              echo "PRESET_NAME=conan-release" >> $GITHUB_OUTPUT
+            fi
           else
-            cmake --preset conan-release
+            echo "PRESET_NAME=conan-release" >> $GITHUB_OUTPUT
           fi
+
+      - name: Configure CMake
+        run: |
+          cmake --preset ${{ steps.preset.outputs.PRESET_NAME }}
 
       - name: Build
-        shell: bash
         run: |
-          # Windows uses conan-default, Linux/macOS use conan-release
-          if [ -f CMakePresets.json ] && grep -q '"conan-default"' CMakePresets.json; then
-            cmake --build --preset conan-default --parallel
-          else
-            cmake --build --preset conan-release --parallel
-          fi
+          cmake --build --preset ${{ steps.preset.outputs.PRESET_NAME }} --parallel
 
       - name: Run tests
-        shell: bash
         run: |
-          # Windows uses conan-default, Linux/macOS use conan-release
-          if [ -f CMakePresets.json ] && grep -q '"conan-default"' CMakePresets.json; then
-            ctest --preset conan-default --output-on-failure
-          else
-            ctest --preset conan-release --output-on-failure
-          fi
+          ctest --preset ${{ steps.preset.outputs.PRESET_NAME }} --output-on-failure
 
   # ============================================
   # Code Coverage
