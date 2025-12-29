@@ -88,6 +88,8 @@ jobs:
         fi
 
   clang-tidy:
+    # Temporarily disabled until src/ directory has C++ files
+    if: false
     name: Clang-Tidy Static Analysis
     runs-on: ubuntu-latest
 
