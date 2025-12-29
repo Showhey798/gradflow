@@ -1,0 +1,455 @@
+# GradFlow Makefile for cargo-make
+# タスクランナーとして cargo-make を使用
+#
+# インストール: cargo install cargo-make
+# 使用方法: makers <task>
+# タスク一覧: makers --list-all-steps
+
+[config]
+default_to_workspace = false
+skip_core_tasks = true
+skip_git_env_info = true
+skip_rust_env_info = true
+skip_crate_env_info = true
+
+[env]
+PROJECT_ROOT = "${CARGO_MAKE_WORKING_DIRECTORY}"
+PYTHON_SRC = "${PROJECT_ROOT}/python"
+CPP_SRC = "${PROJECT_ROOT}/src"
+BUILD_DIR = "${PROJECT_ROOT}/build"
+PYTHONPATH = "${PYTHON_SRC}"
+
+# ========================================
+# Python 開発環境
+# ========================================
+
+[tasks.install]
+description = "uv を使用して依存関係をインストール"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "📦 Installing dependencies with uv..."
+if ! command -v uv &> /dev/null; then
+    echo "❌ uv is not installed. Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+fi
+uv pip install -e ".[dev]"
+echo "✅ Dependencies installed"
+'''
+
+[tasks.install-uv]
+description = "uv をインストール"
+script = '''
+#!/usr/bin/env bash
+if ! command -v uv &> /dev/null; then
+    echo "📦 Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    echo "✅ uv installed"
+else
+    echo "✅ uv is already installed"
+fi
+'''
+
+# ========================================
+# Python コード品質
+# ========================================
+
+[tasks.format]
+description = "ruff format でコードをフォーマット"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🎨 Formatting Python code with ruff..."
+ruff format ${PYTHON_SRC}
+echo "✅ Formatting complete"
+'''
+
+[tasks.format-check]
+description = "ruff format でフォーマットをチェック（変更なし）"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🔍 Checking Python code formatting..."
+ruff format --check ${PYTHON_SRC}
+echo "✅ Format check complete"
+'''
+
+[tasks.lint]
+description = "ruff check でリント"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🔍 Linting Python code with ruff..."
+ruff check ${PYTHON_SRC}
+echo "✅ Lint check complete"
+'''
+
+[tasks.lint-fix]
+description = "ruff check でリントして自動修正"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🔧 Linting and fixing Python code with ruff..."
+ruff check --fix ${PYTHON_SRC}
+echo "✅ Lint and fix complete"
+'''
+
+[tasks.typecheck]
+description = "pyright で型チェック"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🔍 Type checking with pyright..."
+pyright ${PYTHON_SRC}
+echo "✅ Type check complete"
+'''
+
+[tasks.check]
+description = "format-check + lint + typecheck を実行"
+dependencies = ["format-check", "lint", "typecheck"]
+
+# ========================================
+# Python テスト
+# ========================================
+
+[tasks.test]
+description = "pytest でテストを実行"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🧪 Running Python tests with pytest..."
+pytest ${PYTHON_SRC}/tests -v
+echo "✅ Tests complete"
+'''
+
+[tasks.test-fast]
+description = "並列実行なしで高速テスト"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🧪 Running Python tests (fast mode)..."
+pytest ${PYTHON_SRC}/tests -v -n 0
+echo "✅ Fast tests complete"
+'''
+
+[tasks.test-unit]
+description = "単体テストのみ実行"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🧪 Running unit tests..."
+pytest ${PYTHON_SRC}/tests -v -m unit
+echo "✅ Unit tests complete"
+'''
+
+[tasks.test-integration]
+description = "統合テストのみ実行"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🧪 Running integration tests..."
+pytest ${PYTHON_SRC}/tests -v -m integration
+echo "✅ Integration tests complete"
+'''
+
+[tasks.test-gpu]
+description = "GPU テストを実行"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🧪 Running GPU tests..."
+pytest ${PYTHON_SRC}/tests -v -m "metal or cuda"
+echo "✅ GPU tests complete"
+'''
+
+[tasks.coverage]
+description = "カバレッジレポートを生成"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "📊 Generating coverage report..."
+pytest ${PYTHON_SRC}/tests --cov=gradflow --cov-report=term-missing --cov-report=html
+echo "✅ Coverage report generated in htmlcov/"
+'''
+
+# ========================================
+# C++ ビルド
+# ========================================
+
+[tasks.build]
+description = "CMake で C++ コードをビルド"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🔨 Building C++ code with CMake..."
+mkdir -p ${BUILD_DIR}
+cd ${BUILD_DIR}
+cmake .. -DGRADFLOW_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build . --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+echo "✅ Build complete"
+'''
+
+[tasks.build-debug]
+description = "デバッグモードでビルド"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🔨 Building C++ code (Debug mode)..."
+mkdir -p ${BUILD_DIR}
+cd ${BUILD_DIR}
+cmake .. -DGRADFLOW_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug
+cmake --build . --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+echo "✅ Debug build complete"
+'''
+
+[tasks.build-release]
+description = "リリースモードでビルド"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🔨 Building C++ code (Release mode)..."
+mkdir -p ${BUILD_DIR}
+cd ${BUILD_DIR}
+cmake .. -DGRADFLOW_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O3 -march=native"
+cmake --build . --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+echo "✅ Release build complete"
+'''
+
+[tasks.test-cpp]
+description = "CTest で C++ テストを実行"
+dependencies = ["build"]
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🧪 Running C++ tests with CTest..."
+cd ${BUILD_DIR}
+ctest --output-on-failure --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+echo "✅ C++ tests complete"
+'''
+
+[tasks.clean-build]
+description = "ビルドディレクトリをクリーン"
+script = '''
+#!/usr/bin/env bash
+echo "🧹 Cleaning build directory..."
+rm -rf ${BUILD_DIR}
+echo "✅ Build directory cleaned"
+'''
+
+# ========================================
+# C++ コード品質
+# ========================================
+
+[tasks.format-cpp]
+description = "clang-format で C++ コードをフォーマット"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🎨 Formatting C++ code with clang-format..."
+find ${CPP_SRC} -name "*.cpp" -o -name "*.h" -o -name "*.hpp" | xargs clang-format -i
+echo "✅ C++ formatting complete"
+'''
+
+[tasks.format-cpp-check]
+description = "clang-format で C++ フォーマットをチェック"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🔍 Checking C++ code formatting..."
+find ${CPP_SRC} -name "*.cpp" -o -name "*.h" -o -name "*.hpp" | xargs clang-format --dry-run -Werror
+echo "✅ C++ format check complete"
+'''
+
+[tasks.lint-cpp]
+description = "clang-tidy で C++ をリント"
+dependencies = ["build"]
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "🔍 Linting C++ code with clang-tidy..."
+cd ${BUILD_DIR}
+run-clang-tidy -p . -header-filter='.*' ${CPP_SRC}
+echo "✅ C++ lint complete"
+'''
+
+# ========================================
+# 複合タスク
+# ========================================
+
+[tasks.test-all]
+description = "Python と C++ の全テストを実行"
+dependencies = ["test", "test-cpp"]
+
+[tasks.ci]
+description = "CI で実行する全チェック"
+dependencies = ["format-check", "lint", "typecheck", "test-all"]
+
+[tasks.dev]
+description = "開発環境をセットアップ"
+dependencies = ["install-uv", "install"]
+script = '''
+#!/usr/bin/env bash
+echo "🔧 Setting up development environment..."
+echo "Installing pre-commit hooks..."
+pre-commit install
+echo "✅ Development environment ready"
+'''
+
+[tasks.qa]
+description = "コード品質チェック（format + lint + typecheck）"
+run_task = { name = ["format", "lint-fix", "typecheck"] }
+
+# ========================================
+# ドキュメント
+# ========================================
+
+[tasks.docs]
+description = "Sphinx でドキュメントを生成"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "📚 Building documentation with Sphinx..."
+cd ${PROJECT_ROOT}/docs
+make html
+echo "✅ Documentation built in docs/_build/html/"
+'''
+
+[tasks.docs-serve]
+description = "ドキュメントサーバーを起動"
+dependencies = ["docs"]
+script = '''
+#!/usr/bin/env bash
+echo "🌐 Starting documentation server..."
+cd ${PROJECT_ROOT}/docs/_build/html
+python -m http.server 8000
+'''
+
+# ========================================
+# クリーンアップ
+# ========================================
+
+[tasks.clean]
+description = "生成物をクリーン"
+script = '''
+#!/usr/bin/env bash
+echo "🧹 Cleaning generated files..."
+rm -rf ${BUILD_DIR}
+rm -rf ${PROJECT_ROOT}/htmlcov
+rm -rf ${PROJECT_ROOT}/.pytest_cache
+rm -rf ${PROJECT_ROOT}/.ruff_cache
+rm -rf ${PROJECT_ROOT}/.mypy_cache
+rm -rf ${PROJECT_ROOT}/.hypothesis
+find ${PROJECT_ROOT} -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+find ${PROJECT_ROOT} -type f -name "*.pyc" -delete 2>/dev/null || true
+find ${PROJECT_ROOT} -type f -name "*.pyo" -delete 2>/dev/null || true
+find ${PROJECT_ROOT} -type f -name ".coverage" -delete 2>/dev/null || true
+echo "✅ Cleanup complete"
+'''
+
+[tasks.clean-all]
+description = "全てをクリーン（依存関係含む）"
+dependencies = ["clean"]
+script = '''
+#!/usr/bin/env bash
+echo "🧹 Cleaning all files including dependencies..."
+rm -rf ${PROJECT_ROOT}/.venv
+rm -rf ${PROJECT_ROOT}/venv
+rm -rf ${PROJECT_ROOT}/*.egg-info
+rm -rf ${PROJECT_ROOT}/dist
+echo "✅ Full cleanup complete"
+'''
+
+# ========================================
+# ベンチマーク
+# ========================================
+
+[tasks.bench]
+description = "ベンチマークを実行"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "⚡ Running benchmarks..."
+pytest ${PYTHON_SRC}/tests -v -m benchmark --benchmark-only
+echo "✅ Benchmarks complete"
+'''
+
+# ========================================
+# プロファイリング
+# ========================================
+
+[tasks.profile]
+description = "プロファイリングを実行"
+script = '''
+#!/usr/bin/env bash
+set -e
+echo "📊 Profiling Python code..."
+python -m cProfile -o profile.stats -m pytest ${PYTHON_SRC}/tests
+echo "✅ Profile saved to profile.stats"
+echo "View with: python -m pstats profile.stats"
+'''
+
+# ========================================
+# ヘルプ
+# ========================================
+
+[tasks.default]
+alias = "help"
+
+[tasks.help]
+description = "利用可能なタスクを表示"
+script = '''
+#!/usr/bin/env bash
+echo "🚀 GradFlow Task Runner (cargo-make)"
+echo ""
+echo "📦 Setup:"
+echo "  dev              - 開発環境をセットアップ"
+echo "  install          - 依存関係をインストール"
+echo "  install-uv       - uv をインストール"
+echo ""
+echo "🎨 Formatting:"
+echo "  format           - Python コードをフォーマット"
+echo "  format-check     - フォーマットをチェック"
+echo "  format-cpp       - C++ コードをフォーマット"
+echo ""
+echo "🔍 Linting:"
+echo "  lint             - Python コードをリント"
+echo "  lint-fix         - リントして自動修正"
+echo "  lint-cpp         - C++ コードをリント"
+echo "  typecheck        - 型チェック"
+echo "  check            - 全チェック（format + lint + typecheck）"
+echo ""
+echo "🧪 Testing:"
+echo "  test             - Python テスト"
+echo "  test-fast        - 高速テスト"
+echo "  test-unit        - 単体テスト"
+echo "  test-integration - 統合テスト"
+echo "  test-gpu         - GPU テスト"
+echo "  test-cpp         - C++ テスト"
+echo "  test-all         - 全テスト"
+echo "  coverage         - カバレッジレポート"
+echo ""
+echo "🔨 Building:"
+echo "  build            - C++ ビルド（Release）"
+echo "  build-debug      - デバッグビルド"
+echo "  build-release    - リリースビルド"
+echo ""
+echo "📚 Documentation:"
+echo "  docs             - ドキュメント生成"
+echo "  docs-serve       - ドキュメントサーバー起動"
+echo ""
+echo "🧹 Cleanup:"
+echo "  clean            - 生成物をクリーン"
+echo "  clean-all        - 全てをクリーン"
+echo "  clean-build      - ビルドディレクトリをクリーン"
+echo ""
+echo "⚡ Performance:"
+echo "  bench            - ベンチマーク実行"
+echo "  profile          - プロファイリング"
+echo ""
+echo "🚀 CI/CD:"
+echo "  ci               - CI チェック"
+echo "  qa               - コード品質チェック"
+echo ""
+echo "使用方法: makers <task>"
+echo "全タスク一覧: makers --list-all-steps"
+'''
