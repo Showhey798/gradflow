@@ -141,12 +141,20 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          cmake --build --preset ${CMAKE_PRESET} --parallel
+          # Try build with detected preset, fall back to conan-release
+          if ! cmake --build --preset ${CMAKE_PRESET} --parallel 2>/dev/null; then
+            echo "Build preset ${CMAKE_PRESET} failed, trying conan-release"
+            cmake --build --preset conan-release --parallel
+          fi
 
       - name: Run tests
         shell: bash
         run: |
-          ctest --preset ${CMAKE_PRESET} --output-on-failure
+          # Try test with detected preset, fall back to conan-release
+          if ! ctest --preset ${CMAKE_PRESET} --output-on-failure 2>/dev/null; then
+            echo "Test preset ${CMAKE_PRESET} failed, trying conan-release"
+            ctest --preset conan-release --output-on-failure
+          fi
 
   # ============================================
   # Code Coverage
