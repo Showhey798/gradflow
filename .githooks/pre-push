@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# GradFlow - Pre-push hook
+# main ブランチへの直接 push を防ぐ
+
+while read local_ref local_sha remote_ref remote_sha
+do
+    if [ "$remote_ref" = "refs/heads/main" ]; then
+        echo ""
+        echo "❌ エラー: main ブランチへの直接 push は禁止されています"
+        echo ""
+        echo "代わりに、Pull Request を使用してください："
+        echo ""
+        echo "  1. フィーチャーブランチを push:"
+        echo "     git push origin feature/your-feature-name"
+        echo ""
+        echo "  2. Pull Request を作成:"
+        echo "     gh pr create --base main --head feature/your-feature-name"
+        echo ""
+        echo "  3. レビュー後、GitHub 上でマージ"
+        echo ""
+        echo "緊急の場合は、以下のコマンドでこのフックをスキップできます（非推奨）："
+        echo "  git push --no-verify"
+        echo ""
+        exit 1
+    fi
+done
+
+exit 0
