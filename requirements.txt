@@ -1,0 +1,21 @@
+# Core dependencies for GradFlow Python bindings
+# Python 3.9 - 3.12 サポート
+
+# NumPy: 数値計算の基盤
+numpy>=1.21.0,<2.0.0
+
+# Scientific computing
+scipy>=1.7.0
+
+# データ可視化（オプション、推論では不要）
+matplotlib>=3.5.0; extra == "viz"
+
+# データ処理（オプション）
+pandas>=1.3.0; extra == "data"
+
+# ONNX エクスポート（オプション）
+onnx>=1.12.0; extra == "onnx"
+onnxruntime>=1.13.0; extra == "onnx"
+
+# プログレスバー（学習時の進捗表示）
+tqdm>=4.62.0

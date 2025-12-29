@@ -1,11 +1,11 @@
 #pragma once
 
+#include "allocator.hpp"
+#include "device.hpp"
+
 #include <cstring>
 #include <memory>
 #include <stdexcept>
-
-#include "allocator.hpp"
-#include "device.hpp"
 
 namespace gradflow {
 
@@ -32,7 +32,8 @@ public:
      * @param allocator Device allocator (defaults to CPU allocator)
      */
     explicit Storage(size_t size, std::shared_ptr<DeviceAllocator> allocator = nullptr)
-        : size_(size), allocator_(allocator ? allocator : get_default_cpu_allocator()) {
+        : size_(size),
+          allocator_(allocator ? allocator : get_default_cpu_allocator()) {
         if (size > 0) {
             data_ = static_cast<T*>(allocator_->allocate(size * sizeof(T)));
         } else {
@@ -57,7 +58,9 @@ public:
      * @brief Move constructor
      */
     Storage(Storage&& other) noexcept
-        : data_(other.data_), size_(other.size_), allocator_(std::move(other.allocator_)) {
+        : data_(other.data_),
+          size_(other.size_),
+          allocator_(std::move(other.allocator_)) {
         other.data_ = nullptr;
         other.size_ = 0;
     }

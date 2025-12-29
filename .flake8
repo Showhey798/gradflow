@@ -1,0 +1,42 @@
+[flake8]
+# GradFlow Flake8 設定
+# Black と互換性のある設定
+
+max-line-length = 88
+extend-ignore = E203, W503, E501
+exclude =
+    .git,
+    __pycache__,
+    .pytest_cache,
+    .mypy_cache,
+    .tox,
+    .venv,
+    venv,
+    build,
+    dist,
+    *.egg-info,
+    .eggs,
+    docs/conf.py
+
+# Complexity
+max-complexity = 15
+
+# Docstring conventions
+docstring-convention = google
+
+# Per-file ignores
+per-file-ignores =
+    __init__.py:F401,F403
+    tests/*:D100,D101,D102,D103,D104
+
+# Plugins
+# flake8-docstrings
+# flake8-bugbear
+# flake8-comprehensions
+# flake8-simplify
+# pep8-naming
+
+# Count errors
+count = True
+statistics = True
+show-source = True

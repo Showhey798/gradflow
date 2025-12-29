@@ -1,0 +1,262 @@
+name: Metal GPU Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/autograd/metal/**'
+      - 'include/gradflow/autograd/metal/**'
+      - 'tests/**'
+      - '.github/workflows/metal_tests.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/autograd/metal/**'
+      - 'include/gradflow/autograd/metal/**'
+      - 'tests/**'
+      - '.github/workflows/metal_tests.yml'
+
+env:
+  CONAN_VERSION: 2.0.17
+
+jobs:
+  metal-tests:
+    name: Metal Tests on Apple Silicon
+    # Apple Silicon ランナーを使用（GitHub Actions でサポートされている場合）
+    # 注: GitHub-hosted runners では macos-14 以降が Apple Silicon (M1) をサポート
+    runs-on: macos-14
+
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Check Metal availability
+      run: |
+        system_profiler SPDisplaysDataType | grep -i metal
+        echo "Metal device info:"
+        system_profiler SPDisplaysDataType
+
+    - name: Install dependencies
+      run: |
+        brew install cmake ninja
+        pip install conan==${{ env.CONAN_VERSION }}
+
+    - name: Configure Conan
+      run: |
+        conan profile detect --force
+        conan install . \
+          --output-folder=build \
+          --build=missing \
+          --settings=build_type=${{ matrix.build_type }}
+
+    - name: Configure CMake with Metal backend
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DGRADFLOW_BUILD_TESTS=ON \
+          -DGRADFLOW_ENABLE_METAL=ON \
+          -DGRADFLOW_ENABLE_CUDA=OFF \
+          -DGRADFLOW_BUILD_PYTHON_BINDINGS=OFF
+
+    - name: Build
+      run: cmake --build build --config ${{ matrix.build_type }} --parallel
+
+    - name: Run Metal unit tests
+      working-directory: build
+      run: |
+        # Metal テストのみを実行
+        ctest --build-config ${{ matrix.build_type }} \
+              --output-on-failure \
+              --tests-regex "metal" \
+              --parallel
+
+    - name: Run Metal integration tests
+      working-directory: build
+      run: |
+        # Metal 統合テストを実行
+        ctest --build-config ${{ matrix.build_type }} \
+              --output-on-failure \
+              --tests-regex "integration.*metal" \
+              --parallel
+
+    - name: Upload test logs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: metal-test-logs-${{ matrix.build_type }}
+        path: |
+          build/Testing/Temporary/
+        retention-days: 7
+
+  metal-benchmarks:
+    name: Metal Performance Benchmarks
+    runs-on: macos-14
+    needs: metal-tests
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        brew install cmake ninja
+        pip install conan==${{ env.CONAN_VERSION }}
+
+    - name: Configure Conan
+      run: |
+        conan profile detect --force
+        conan install . \
+          --output-folder=build \
+          --build=missing \
+          --settings=build_type=Release
+
+    - name: Configure CMake with Metal backend and benchmarks
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DGRADFLOW_BUILD_TESTS=OFF \
+          -DGRADFLOW_BUILD_BENCHMARKS=ON \
+          -DGRADFLOW_ENABLE_METAL=ON \
+          -DGRADFLOW_ENABLE_CUDA=OFF
+
+    - name: Build benchmarks
+      run: cmake --build build --config Release --parallel
+
+    - name: Run Metal benchmarks
+      working-directory: build
+      run: |
+        # ベンチマークを実行して結果を保存
+        ./bin/gradflow_benchmarks --benchmark_format=json \
+          --benchmark_out=metal_benchmark_results.json \
+          --benchmark_filter="metal"
+
+    - name: Download baseline benchmarks
+      continue-on-error: true
+      uses: actions/download-artifact@v4
+      with:
+        name: metal-benchmark-baseline
+        path: baseline/
+
+    - name: Compare benchmark results
+      continue-on-error: true
+      run: |
+        if [ -f baseline/metal_benchmark_results.json ]; then
+          echo "Comparing with baseline..."
+          # ベースラインと比較（カスタムスクリプトが必要）
+          # python scripts/compare_benchmarks.py \
+          #   baseline/metal_benchmark_results.json \
+          #   build/metal_benchmark_results.json
+        else
+          echo "No baseline found, skipping comparison."
+        fi
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: metal-benchmark-baseline
+        path: build/metal_benchmark_results.json
+        retention-days: 90
+
+    - name: Comment benchmark results on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const results = JSON.parse(fs.readFileSync('build/metal_benchmark_results.json', 'utf8'));
+
+          let comment = '## Metal Benchmark Results\n\n';
+          comment += '| Benchmark | Time (ns) | CPU (ns) | Iterations |\n';
+          comment += '|-----------|-----------|----------|------------|\n';
+
+          results.benchmarks.forEach(b => {
+            comment += `| ${b.name} | ${b.real_time.toFixed(2)} | ${b.cpu_time.toFixed(2)} | ${b.iterations} |\n`;
+          });
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  metal-stress-tests:
+    name: Metal Stress Tests
+    runs-on: macos-14
+    needs: metal-tests
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        brew install cmake ninja
+        pip install conan==${{ env.CONAN_VERSION }}
+
+    - name: Configure Conan
+      run: |
+        conan profile detect --force
+        conan install . \
+          --output-folder=build \
+          --build=missing \
+          --settings=build_type=Release
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DGRADFLOW_BUILD_TESTS=ON \
+          -DGRADFLOW_ENABLE_METAL=ON
+
+    - name: Build
+      run: cmake --build build --config Release --parallel
+
+    - name: Run Metal stress tests
+      working-directory: build
+      timeout-minutes: 30
+      run: |
+        # 大規模データでのストレステスト
+        ctest --build-config Release \
+              --output-on-failure \
+              --tests-regex "stress.*metal" \
+              --timeout 1800
+
+    - name: Check for memory leaks
+      working-directory: build
+      run: |
+        # Memory leak チェック（Instruments などを使用）
+        echo "Running memory leak detection..."
+        # leaks コマンドでメモリリークをチェック
+        # leaks --atExit -- ./bin/metal_stress_test

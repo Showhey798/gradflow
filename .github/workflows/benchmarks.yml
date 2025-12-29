@@ -1,0 +1,381 @@
+name: Performance Benchmarks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 毎週月曜日 0:00 UTC に実行
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+    inputs:
+      benchmark_filter:
+        description: 'Benchmark filter pattern'
+        required: false
+        default: '.*'
+
+env:
+  CONAN_VERSION: 2.0.17
+
+jobs:
+  cpu-benchmarks:
+    name: CPU Benchmarks on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0  # ベースラインとの比較のため full history
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build clang-15
+
+    - name: Install system dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install cmake ninja
+
+    - name: Install Python dependencies
+      run: |
+        pip install conan==${{ env.CONAN_VERSION }}
+        pip install matplotlib pandas seaborn
+
+    - name: Configure Conan
+      run: |
+        conan profile detect --force
+        conan install . \
+          --output-folder=build \
+          --build=missing \
+          --settings=build_type=Release
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DGRADFLOW_BUILD_TESTS=OFF \
+          -DGRADFLOW_BUILD_BENCHMARKS=ON \
+          -DGRADFLOW_ENABLE_METAL=OFF \
+          -DGRADFLOW_ENABLE_CUDA=OFF
+
+    - name: Build benchmarks
+      run: cmake --build build --config Release --parallel
+
+    - name: Run CPU benchmarks
+      working-directory: build
+      run: |
+        FILTER="${{ github.event.inputs.benchmark_filter || '.*' }}"
+        ./bin/gradflow_benchmarks \
+          --benchmark_format=json \
+          --benchmark_out=cpu_benchmark_results.json \
+          --benchmark_filter="$FILTER" \
+          --benchmark_repetitions=5 \
+          --benchmark_report_aggregates_only=true
+
+    - name: Download baseline benchmarks
+      continue-on-error: true
+      uses: dawidd6/action-download-artifact@v3
+      with:
+        workflow: benchmarks.yml
+        branch: main
+        name: cpu-benchmark-baseline-${{ matrix.os }}
+        path: baseline/
+
+    - name: Compare with baseline
+      if: github.event_name == 'pull_request'
+      continue-on-error: true
+      run: |
+        if [ -f baseline/cpu_benchmark_results.json ]; then
+          python scripts/compare_benchmarks.py \
+            --baseline baseline/cpu_benchmark_results.json \
+            --current build/cpu_benchmark_results.json \
+            --output build/benchmark_comparison.md \
+            --threshold 0.05
+
+          # コメント用に結果を読み込む
+          if [ -f build/benchmark_comparison.md ]; then
+            cat build/benchmark_comparison.md >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "No baseline found for comparison."
+        fi
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: cpu-benchmark-baseline-${{ matrix.os }}
+        path: build/cpu_benchmark_results.json
+        retention-days: 90
+
+    - name: Generate benchmark plots
+      run: |
+        python scripts/plot_benchmarks.py \
+          --input build/cpu_benchmark_results.json \
+          --output build/benchmark_plots/
+
+    - name: Upload benchmark plots
+      uses: actions/upload-artifact@v4
+      with:
+        name: cpu-benchmark-plots-${{ matrix.os }}
+        path: build/benchmark_plots/
+        retention-days: 30
+
+  metal-benchmarks:
+    name: Metal GPU Benchmarks
+    runs-on: macos-14
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        brew install cmake ninja
+        pip install conan==${{ env.CONAN_VERSION }}
+        pip install matplotlib pandas seaborn
+
+    - name: Configure Conan
+      run: |
+        conan profile detect --force
+        conan install . \
+          --output-folder=build \
+          --build=missing \
+          --settings=build_type=Release
+
+    - name: Configure CMake with Metal
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DGRADFLOW_BUILD_BENCHMARKS=ON \
+          -DGRADFLOW_ENABLE_METAL=ON
+
+    - name: Build benchmarks
+      run: cmake --build build --config Release --parallel
+
+    - name: Run Metal benchmarks
+      working-directory: build
+      run: |
+        FILTER="${{ github.event.inputs.benchmark_filter || '.*metal.*' }}"
+        ./bin/gradflow_benchmarks \
+          --benchmark_format=json \
+          --benchmark_out=metal_benchmark_results.json \
+          --benchmark_filter="$FILTER" \
+          --benchmark_repetitions=5 \
+          --benchmark_report_aggregates_only=true
+
+    - name: Profile Metal kernels
+      working-directory: build
+      run: |
+        # Metal Performance Shaders のプロファイリング
+        xcrun xctrace record --template 'Metal System Trace' \
+          --output metal_profile.trace \
+          --launch -- ./bin/gradflow_benchmarks \
+            --benchmark_filter="metal.*matmul"
+
+    - name: Download baseline
+      continue-on-error: true
+      uses: dawidd6/action-download-artifact@v3
+      with:
+        workflow: benchmarks.yml
+        branch: main
+        name: metal-benchmark-baseline
+        path: baseline/
+
+    - name: Compare with baseline
+      if: github.event_name == 'pull_request'
+      continue-on-error: true
+      run: |
+        if [ -f baseline/metal_benchmark_results.json ]; then
+          python scripts/compare_benchmarks.py \
+            --baseline baseline/metal_benchmark_results.json \
+            --current build/metal_benchmark_results.json \
+            --output build/metal_comparison.md \
+            --threshold 0.05
+
+          cat build/metal_comparison.md >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: metal-benchmark-baseline
+        path: |
+          build/metal_benchmark_results.json
+          build/metal_profile.trace
+        retention-days: 90
+
+  cuda-benchmarks:
+    name: CUDA GPU Benchmarks
+    runs-on: [self-hosted, linux, x64, cuda]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install conan==${{ env.CONAN_VERSION }}
+        pip install matplotlib pandas seaborn
+
+    - name: Configure Conan
+      run: |
+        conan profile detect --force
+        conan install . \
+          --output-folder=build \
+          --build=missing \
+          --settings=build_type=Release
+
+    - name: Configure CMake with CUDA
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DGRADFLOW_BUILD_BENCHMARKS=ON \
+          -DGRADFLOW_ENABLE_CUDA=ON
+
+    - name: Build benchmarks
+      run: cmake --build build --config Release --parallel
+
+    - name: Run CUDA benchmarks
+      working-directory: build
+      run: |
+        FILTER="${{ github.event.inputs.benchmark_filter || '.*cuda.*' }}"
+        ./bin/gradflow_benchmarks \
+          --benchmark_format=json \
+          --benchmark_out=cuda_benchmark_results.json \
+          --benchmark_filter="$FILTER" \
+          --benchmark_repetitions=5 \
+          --benchmark_report_aggregates_only=true
+
+    - name: Profile CUDA kernels
+      working-directory: build
+      run: |
+        ncu --set full \
+          --export cuda_kernel_profile \
+          --force-overwrite \
+          ./bin/gradflow_benchmarks \
+            --benchmark_filter="cuda.*matmul"
+
+    - name: Download baseline
+      continue-on-error: true
+      uses: dawidd6/action-download-artifact@v3
+      with:
+        workflow: benchmarks.yml
+        branch: main
+        name: cuda-benchmark-baseline
+        path: baseline/
+
+    - name: Compare with baseline
+      if: github.event_name == 'pull_request'
+      continue-on-error: true
+      run: |
+        if [ -f baseline/cuda_benchmark_results.json ]; then
+          python scripts/compare_benchmarks.py \
+            --baseline baseline/cuda_benchmark_results.json \
+            --current build/cuda_benchmark_results.json \
+            --output build/cuda_comparison.md \
+            --threshold 0.05
+
+          cat build/cuda_comparison.md >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: cuda-benchmark-baseline
+        path: |
+          build/cuda_benchmark_results.json
+          build/cuda_kernel_profile.ncu-rep
+        retention-days: 90
+
+  comment-pr:
+    name: Comment Benchmark Results on PR
+    runs-on: ubuntu-latest
+    needs: [cpu-benchmarks, metal-benchmarks]
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Download all benchmark comparisons
+      uses: actions/download-artifact@v4
+      with:
+        pattern: '*-benchmark-baseline-*'
+        path: benchmarks/
+
+    - name: Create PR comment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+
+          let comment = '## 📊 Benchmark Results\n\n';
+
+          // すべての比較結果を収集
+          const findMarkdownFiles = (dir) => {
+            const files = [];
+            const items = fs.readdirSync(dir);
+            for (const item of items) {
+              const fullPath = path.join(dir, item);
+              if (fs.statSync(fullPath).isDirectory()) {
+                files.push(...findMarkdownFiles(fullPath));
+              } else if (item.endsWith('.md')) {
+                files.push(fullPath);
+              }
+            }
+            return files;
+          };
+
+          const mdFiles = findMarkdownFiles('benchmarks');
+          if (mdFiles.length === 0) {
+            comment += 'No benchmark comparisons available.\n';
+          } else {
+            for (const file of mdFiles) {
+              comment += fs.readFileSync(file, 'utf8') + '\n\n';
+            }
+          }
+
+          comment += '\n---\n';
+          comment += '*Benchmarks are run with 5 repetitions. ';
+          comment += 'Significant regressions (>5%) are highlighted.*\n';
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

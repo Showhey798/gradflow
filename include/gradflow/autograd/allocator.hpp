@@ -1,11 +1,11 @@
 #pragma once
 
+#include "device.hpp"
+
 #include <cstddef>
 #include <cstdlib>
 #include <memory>
 #include <stdexcept>
-
-#include "device.hpp"
 
 namespace gradflow {
 

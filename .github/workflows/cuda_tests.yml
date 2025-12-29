@@ -1,0 +1,281 @@
+name: CUDA GPU Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/autograd/cuda/**'
+      - 'include/gradflow/autograd/cuda/**'
+      - 'tests/**'
+      - '.github/workflows/cuda_tests.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/autograd/cuda/**'
+      - 'include/gradflow/autograd/cuda/**'
+      - 'tests/**'
+      - '.github/workflows/cuda_tests.yml'
+
+env:
+  CONAN_VERSION: 2.0.17
+  CUDA_VERSION: 12.3
+
+jobs:
+  cuda-tests:
+    name: CUDA Tests on NVIDIA GPU
+    # 注: Self-hosted runner が必要（NVIDIA GPU 搭載）
+    # GitHub-hosted runners には GPU がないため、self-hosted を使用
+    runs-on: [self-hosted, linux, x64, cuda]
+
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        cuda_arch: [sm_75, sm_80, sm_86, sm_89]  # Turing, Ampere, Ada Lovelace
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Check CUDA availability
+      run: |
+        nvidia-smi
+        nvcc --version
+        echo "CUDA_HOME: $CUDA_HOME"
+        echo "PATH: $PATH"
+
+    - name: Install dependencies
+      run: |
+        pip install conan==${{ env.CONAN_VERSION }}
+        conan --version
+
+    - name: Configure Conan
+      run: |
+        conan profile detect --force
+        conan install . \
+          --output-folder=build \
+          --build=missing \
+          --settings=build_type=${{ matrix.build_type }}
+
+    - name: Configure CMake with CUDA backend
+      env:
+        CUDAARCHS: ${{ matrix.cuda_arch }}
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DGRADFLOW_BUILD_TESTS=ON \
+          -DGRADFLOW_ENABLE_CUDA=ON \
+          -DGRADFLOW_ENABLE_METAL=OFF \
+          -DGRADFLOW_BUILD_PYTHON_BINDINGS=OFF \
+          -DCMAKE_CUDA_ARCHITECTURES=${{ matrix.cuda_arch }}
+
+    - name: Build
+      run: cmake --build build --config ${{ matrix.build_type }} --parallel
+
+    - name: Run CUDA unit tests
+      working-directory: build
+      run: |
+        # CUDA テストのみを実行
+        ctest --build-config ${{ matrix.build_type }} \
+              --output-on-failure \
+              --tests-regex "cuda" \
+              --parallel
+
+    - name: Run CUDA integration tests
+      working-directory: build
+      run: |
+        # CUDA 統合テストを実行
+        ctest --build-config ${{ matrix.build_type }} \
+              --output-on-failure \
+              --tests-regex "integration.*cuda" \
+              --parallel
+
+    - name: Check CUDA memory leaks with compute-sanitizer
+      if: matrix.build_type == 'Debug'
+      working-directory: build
+      run: |
+        # CUDA メモリリークチェック
+        compute-sanitizer --leak-check full \
+          --tool memcheck \
+          ./bin/cuda_tests
+
+    - name: Upload test logs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cuda-test-logs-${{ matrix.build_type }}-${{ matrix.cuda_arch }}
+        path: |
+          build/Testing/Temporary/
+        retention-days: 7
+
+  cuda-benchmarks:
+    name: CUDA Performance Benchmarks
+    runs-on: [self-hosted, linux, x64, cuda]
+    needs: cuda-tests
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install conan==${{ env.CONAN_VERSION }}
+
+    - name: Configure Conan
+      run: |
+        conan profile detect --force
+        conan install . \
+          --output-folder=build \
+          --build=missing \
+          --settings=build_type=Release
+
+    - name: Configure CMake with CUDA backend and benchmarks
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DGRADFLOW_BUILD_TESTS=OFF \
+          -DGRADFLOW_BUILD_BENCHMARKS=ON \
+          -DGRADFLOW_ENABLE_CUDA=ON \
+          -DGRADFLOW_ENABLE_METAL=OFF
+
+    - name: Build benchmarks
+      run: cmake --build build --config Release --parallel
+
+    - name: Run CUDA benchmarks
+      working-directory: build
+      run: |
+        # ベンチマークを実行して結果を保存
+        ./bin/gradflow_benchmarks --benchmark_format=json \
+          --benchmark_out=cuda_benchmark_results.json \
+          --benchmark_filter="cuda"
+
+    - name: Profile with NVIDIA Nsight Compute
+      working-directory: build
+      run: |
+        # CUDA カーネルのプロファイリング
+        ncu --set full \
+          --export cuda_profile \
+          ./bin/gradflow_benchmarks --benchmark_filter="cuda.*matmul"
+
+    - name: Download baseline benchmarks
+      continue-on-error: true
+      uses: actions/download-artifact@v4
+      with:
+        name: cuda-benchmark-baseline
+        path: baseline/
+
+    - name: Compare benchmark results
+      continue-on-error: true
+      run: |
+        if [ -f baseline/cuda_benchmark_results.json ]; then
+          echo "Comparing with baseline..."
+          # ベースラインと比較
+          python scripts/compare_benchmarks.py \
+            baseline/cuda_benchmark_results.json \
+            build/cuda_benchmark_results.json
+        else
+          echo "No baseline found, skipping comparison."
+        fi
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: cuda-benchmark-baseline
+        path: |
+          build/cuda_benchmark_results.json
+          build/cuda_profile.ncu-rep
+        retention-days: 90
+
+    - name: Comment benchmark results on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const results = JSON.parse(fs.readFileSync('build/cuda_benchmark_results.json', 'utf8'));
+
+          let comment = '## CUDA Benchmark Results\n\n';
+          comment += '| Benchmark | Time (ns) | CPU (ns) | Iterations |\n';
+          comment += '|-----------|-----------|----------|------------|\n';
+
+          results.benchmarks.forEach(b => {
+            comment += `| ${b.name} | ${b.real_time.toFixed(2)} | ${b.cpu_time.toFixed(2)} | ${b.iterations} |\n`;
+          });
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  cuda-multi-gpu:
+    name: CUDA Multi-GPU Tests
+    runs-on: [self-hosted, linux, x64, cuda, multi-gpu]
+    if: contains(github.event.head_commit.message, '[multi-gpu]')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Check available GPUs
+      run: |
+        nvidia-smi --list-gpus
+        nvidia-smi
+
+    - name: Install dependencies
+      run: |
+        pip install conan==${{ env.CONAN_VERSION }}
+
+    - name: Configure Conan
+      run: |
+        conan profile detect --force
+        conan install . \
+          --output-folder=build \
+          --build=missing \
+          --settings=build_type=Release
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DGRADFLOW_BUILD_TESTS=ON \
+          -DGRADFLOW_ENABLE_CUDA=ON \
+          -DGRADFLOW_ENABLE_MULTI_GPU=ON
+
+    - name: Build
+      run: cmake --build build --config Release --parallel
+
+    - name: Run Multi-GPU tests
+      working-directory: build
+      run: |
+        # Multi-GPU テストを実行
+        ctest --output-on-failure \
+              --tests-regex "multi_gpu" \
+              --parallel 1  # Multi-GPU テストは並列実行しない

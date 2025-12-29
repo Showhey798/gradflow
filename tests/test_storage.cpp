@@ -229,7 +229,7 @@ TEST(StorageTest, MoveSemantics) {
     EXPECT_EQ(storage2[0], 42);
 
     // Original storage should be empty
-    EXPECT_EQ(storage1.size(), 0);  // NOLINT
+    EXPECT_EQ(storage1.size(), 0);        // NOLINT
     EXPECT_EQ(storage1.data(), nullptr);  // NOLINT
 
     // Move assign
@@ -240,7 +240,7 @@ TEST(StorageTest, MoveSemantics) {
     EXPECT_EQ(storage3[0], 42);
 
     // storage2 should be empty
-    EXPECT_EQ(storage2.size(), 0);  // NOLINT
+    EXPECT_EQ(storage2.size(), 0);        // NOLINT
     EXPECT_EQ(storage2.data(), nullptr);  // NOLINT
 }
 
