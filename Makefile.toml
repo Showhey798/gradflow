@@ -33,7 +33,7 @@ if ! command -v uv &> /dev/null; then
     echo "❌ uv is not installed. Installing uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
 fi
-uv pip install -e ".[dev]"
+uv pip install --system -e ".[dev]"
 echo "✅ Dependencies installed"
 '''
 
@@ -281,8 +281,8 @@ description = "Python と C++ の全テストを実行"
 dependencies = ["test", "test-cpp"]
 
 [tasks.ci]
-description = "CI で実行する全チェック"
-dependencies = ["format-check", "lint", "typecheck", "test-all"]
+description = "CI で実行する全チェック（Python + C++）"
+dependencies = ["format-check", "lint", "typecheck", "format-cpp-check", "build", "test-all"]
 
 [tasks.dev]
 description = "開発環境をセットアップ"
@@ -296,8 +296,8 @@ echo "✅ Development environment ready"
 '''
 
 [tasks.qa]
-description = "コード品質チェック（format + lint + typecheck）"
-run_task = { name = ["format", "lint-fix", "typecheck"] }
+description = "コード品質チェック（Python + C++ format + lint + typecheck）"
+run_task = { name = ["format", "format-cpp", "lint-fix", "typecheck"] }
 
 # ========================================
 # ドキュメント

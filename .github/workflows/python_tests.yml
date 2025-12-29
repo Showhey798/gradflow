@@ -66,7 +66,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install conan==${{ env.CONAN_VERSION }}
-        uv pip install -e ".[dev]"
+        uv pip install --system -e ".[dev]"
 
     - name: Configure Conan
       run: |
@@ -269,7 +269,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv pip install -e ".[dev]"
+        uv pip install --system -e ".[dev]"
         pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints
 
     - name: Build documentation
