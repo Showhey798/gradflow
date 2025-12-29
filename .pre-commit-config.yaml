@@ -1,0 +1,96 @@
+# Pre-commit hooks configuration
+# See https://pre-commit.com for more information
+# Install: pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--unsafe]  # Allow custom YAML tags
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # C++ formatting with clang-format
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v18.1.8
+    hooks:
+      - id: clang-format
+        types_or: [c++, c]
+        args: [-i, --style=file]
+
+  # Python formatting with ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      # Run the formatter
+      - id: ruff-format
+        types_or: [python, pyi]
+      # Run the linter
+      - id: ruff
+        types_or: [python, pyi]
+        args: [--fix, --exit-non-zero-on-fix]
+
+  # Python type checking with pyright (optional, can be slow)
+  # Uncomment if you want type checking in pre-commit
+  # - repo: https://github.com/RobertCraigie/pyright-python
+  #   rev: v1.1.340
+  #   hooks:
+  #     - id: pyright
+  #       additional_dependencies: [numpy]
+
+  # CMake formatting (optional)
+  # - repo: https://github.com/cheshirekow/cmake-format-precommit
+  #   rev: v0.6.13
+  #   hooks:
+  #     - id: cmake-format
+  #     - id: cmake-lint
+
+  # Markdown linting (optional)
+  # - repo: https://github.com/igorshubovych/markdownlint-cli
+  #   rev: v0.37.0
+  #   hooks:
+  #     - id: markdownlint
+  #       args: [--fix]
+
+# Local hooks using project scripts
+  - repo: local
+    hooks:
+      # Custom C++ format check (using project script)
+      - id: cpp-format-check
+        name: C++ Format Check
+        entry: scripts/ci-format-check.sh
+        language: script
+        types_or: [c++, c]
+        pass_filenames: false
+        # Only run on C++ file changes
+        files: \.(cpp|hpp|h)$
+
+# Configuration
+default_language_version:
+  python: python3.11
+
+# Performance: Run hooks in parallel
+default_install_hook_types: [pre-commit, pre-push]
+
+# CI integration
+ci:
+  autofix_commit_msg: |
+    style: Auto-fix pre-commit hooks
+
+    Applied automated fixes from pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: 'chore: Update pre-commit hooks'
+  autoupdate_schedule: monthly
+  skip: []
+  submodules: false
