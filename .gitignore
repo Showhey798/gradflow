@@ -1,0 +1,76 @@
+# Build directories
+build/
+build_*/
+cmake-build-*/
+out/
+
+# Conan
+conan.lock
+conaninfo.txt
+conanbuildinfo.*
+CMakeUserPresets.json
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+Testing/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Compiled files
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+*.exe
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+.eggs/
+*.egg
+
+# Coverage
+*.gcov
+*.gcda
+*.gcno
+coverage.info
+coverage_report/
+htmlcov/
+.coverage
+
+# Sanitizers
+*.profraw
+*.profdata
+
+# Documentation
+docs/html/
+docs/latex/
+Doxyfile.local
+
+# Package managers
+.conan/
+vcpkg_installed/
+node_modules/
+
+# OS
+Thumbs.db
+.DS_Store

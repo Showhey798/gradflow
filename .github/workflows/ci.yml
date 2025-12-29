@@ -1,0 +1,253 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+  CONAN_VERSION: 2.0.17
+
+jobs:
+  # ============================================
+  # Code Quality Checks
+  # ============================================
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install clang-format and clang-tidy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-15 clang-tidy-15
+          sudo ln -sf /usr/bin/clang-format-15 /usr/bin/clang-format
+          sudo ln -sf /usr/bin/clang-tidy-15 /usr/bin/clang-tidy
+
+      - name: Check code formatting
+        run: |
+          find include src tests examples -name '*.cpp' -o -name '*.hpp' -o -name '*.h' | \
+            xargs clang-format --dry-run --Werror
+
+      - name: Install dependencies for clang-tidy
+        run: |
+          sudo apt-get install -y cmake ninja-build
+          pip install conan==${{ env.CONAN_VERSION }}
+
+      - name: Setup Conan profile
+        run: |
+          conan profile detect --force
+
+      - name: Install dependencies with Conan
+        run: |
+          conan install . --build=missing -s build_type=${{ env.BUILD_TYPE }}
+
+      - name: Configure CMake for clang-tidy
+        run: |
+          cmake --preset conan-release
+
+      - name: Run clang-tidy
+        run: |
+          find src tests -name '*.cpp' | \
+            xargs clang-tidy -p build/Release
+
+  # ============================================
+  # Multi-Platform Build and Test
+  # ============================================
+  build-test:
+    name: Build & Test (${{ matrix.os }}, ${{ matrix.compiler }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux - GCC
+          - os: ubuntu-22.04
+            compiler: gcc
+            version: 11
+            build_type: Release
+
+          - os: ubuntu-22.04
+            compiler: gcc
+            version: 12
+            build_type: Release
+
+          # Linux - Clang
+          - os: ubuntu-22.04
+            compiler: clang
+            version: 15
+            build_type: Release
+
+          # macOS - AppleClang
+          - os: macos-13
+            compiler: apple-clang
+            version: 14
+            build_type: Release
+
+          - os: macos-14
+            compiler: apple-clang
+            version: 15
+            build_type: Release
+
+          # Windows - MSVC
+          - os: windows-2022
+            compiler: msvc
+            version: 193
+            build_type: Release
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Conan
+        run: |
+          pip install conan==${{ env.CONAN_VERSION }}
+
+      - name: Setup Conan profile
+        run: |
+          conan profile detect --force
+
+      - name: Install dependencies
+        run: |
+          conan install . --build=missing -s build_type=${{ matrix.build_type }}
+
+      - name: Configure CMake
+        run: |
+          cmake --preset conan-release
+
+      - name: Build
+        run: |
+          cmake --build --preset conan-release --parallel
+
+      - name: Run tests
+        run: |
+          ctest --preset conan-release --output-on-failure
+
+  # ============================================
+  # Code Coverage
+  # ============================================
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build lcov
+          pip install conan==${{ env.CONAN_VERSION }}
+
+      - name: Setup Conan profile
+        run: |
+          conan profile detect --force
+
+      - name: Install dependencies with Conan
+        run: |
+          conan install . --build=missing -s build_type=Debug
+
+      - name: Configure with coverage
+        run: |
+          cmake --preset conan-debug \
+            -DFULLSCRATCH_ENABLE_COVERAGE=ON
+
+      - name: Build
+        run: |
+          cmake --build --preset conan-debug --parallel
+
+      - name: Run tests
+        run: |
+          ctest --preset conan-debug --output-on-failure
+
+      - name: Generate coverage report
+        run: |
+          lcov --directory . --capture --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/tests/*' '*/examples/*' --output-file coverage.info
+          lcov --list coverage.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # ============================================
+  # Sanitizers
+  # ============================================
+  sanitizers:
+    name: Sanitizers (${{ matrix.sanitizer }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, undefined]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang-15
+          pip install conan==${{ env.CONAN_VERSION }}
+
+      - name: Setup Conan profile
+        run: |
+          conan profile detect --force
+
+      - name: Install dependencies with Conan
+        run: |
+          conan install . --build=missing -s build_type=Debug
+
+      - name: Configure with sanitizers
+        run: |
+          CC=clang-15 CXX=clang++-15 cmake --preset conan-debug \
+            -DFULLSCRATCH_ENABLE_SANITIZERS=ON
+
+      - name: Build
+        run: |
+          cmake --build --preset conan-debug --parallel
+
+      - name: Run tests with ${{ matrix.sanitizer }} sanitizer
+        run: |
+          ctest --preset conan-debug --output-on-failure
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_init_order=1
+          UBSAN_OPTIONS: print_stacktrace=1
+
+  # ============================================
+  # Documentation Build
+  # ============================================
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz
+
+      - name: Build documentation
+        run: |
+          # TODO: Add Doxygen configuration
+          echo "Documentation build placeholder"
