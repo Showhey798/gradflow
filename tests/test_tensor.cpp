@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
-
 #include "gradflow/autograd/tensor.hpp"
+
+#include <gtest/gtest.h>
 
 using namespace gradflow;
 
@@ -233,9 +233,9 @@ TEST_F(TensorTest, PermuteBasic) {
 TEST_F(TensorTest, PermuteInvalid) {
     Tensor<float> t(Shape({2, 3, 4}));
 
-    EXPECT_THROW(t.permute({0, 1}), std::invalid_argument);        // Wrong size
-    EXPECT_THROW(t.permute({0, 0, 1}), std::invalid_argument);     // Duplicate
-    EXPECT_THROW(t.permute({0, 1, 5}), std::invalid_argument);     // Out of range
+    EXPECT_THROW(t.permute({0, 1}), std::invalid_argument);     // Wrong size
+    EXPECT_THROW(t.permute({0, 0, 1}), std::invalid_argument);  // Duplicate
+    EXPECT_THROW(t.permute({0, 1, 5}), std::invalid_argument);  // Out of range
 }
 
 // ========================================
@@ -283,9 +283,9 @@ TEST_F(TensorTest, SlicingZeroCopy) {
 TEST_F(TensorTest, SlicingOutOfBounds) {
     Tensor<float> t({1.0f, 2.0f, 3.0f, 4.0f, 5.0f});
 
-    EXPECT_THROW(t.slice(1, 0, 2), std::out_of_range);  // Dimension out of range
-    EXPECT_THROW(t.slice(0, 3, 2), std::out_of_range);  // start >= end
-    EXPECT_THROW(t.slice(0, 0, 10), std::out_of_range); // end > size
+    EXPECT_THROW(t.slice(1, 0, 2), std::out_of_range);   // Dimension out of range
+    EXPECT_THROW(t.slice(0, 3, 2), std::out_of_range);   // start >= end
+    EXPECT_THROW(t.slice(0, 0, 10), std::out_of_range);  // end > size
 }
 
 // ========================================
