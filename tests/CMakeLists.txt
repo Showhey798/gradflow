@@ -65,29 +65,9 @@ endfunction()
 # Core Tests
 # ========================================
 
-# Matrix operations tests
-fullscratch_add_test(matrix_test
-    SOURCES test_matrix.cpp
-)
-
-# Vector operations tests
-fullscratch_add_test(vector_test
-    SOURCES test_vector.cpp
-)
-
-# Activation functions tests
-fullscratch_add_test(activation_test
-    SOURCES test_activation.cpp
-)
-
-# Loss functions tests
-fullscratch_add_test(loss_test
-    SOURCES test_loss.cpp
-)
-
-# Neural network tests
-fullscratch_add_test(neural_network_test
-    SOURCES test_neural_network.cpp
+# Shape tests
+fullscratch_add_test(shape_test
+    SOURCES test_shape.cpp
 )
 
 # Optimizer tests
@@ -95,18 +75,45 @@ fullscratch_add_test(optimizer_test
     SOURCES test_optimizer.cpp
 )
 
-# Data loader tests
-fullscratch_add_test(data_loader_test
-    SOURCES test_data_loader.cpp
-)
+# TODO: Implement these tests
+# # Matrix operations tests
+# fullscratch_add_test(matrix_test
+#     SOURCES test_matrix.cpp
+# )
+#
+# # Vector operations tests
+# fullscratch_add_test(vector_test
+#     SOURCES test_vector.cpp
+# )
+#
+# # Activation functions tests
+# fullscratch_add_test(activation_test
+#     SOURCES test_activation.cpp
+# )
+#
+# # Loss functions tests
+# fullscratch_add_test(loss_test
+#     SOURCES test_loss.cpp
+# )
+#
+# # Neural network tests
+# fullscratch_add_test(neural_network_test
+#     SOURCES test_neural_network.cpp
+# )
+#
+# # Data loader tests
+# fullscratch_add_test(data_loader_test
+#     SOURCES test_data_loader.cpp
+# )
 
 # ========================================
 # Integration Tests
 # ========================================
 
-fullscratch_add_test(integration_test
-    SOURCES test_integration.cpp
-)
+# TODO: Implement integration tests
+# fullscratch_add_test(integration_test
+#     SOURCES test_integration.cpp
+# )
 
 # ========================================
 # Custom Test Target
