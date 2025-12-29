@@ -87,11 +87,10 @@ jobs:
             build_type: Release
 
           # macOS - AppleClang
-          # Temporarily disabled - macos-13 environment issues
-          # - os: macos-13
-          #   compiler: apple-clang
-          #   version: 14
-          #   build_type: Release
+          - os: macos-13
+            compiler: apple-clang
+            version: 14
+            build_type: Release
 
           - os: macos-14
             compiler: apple-clang
@@ -99,11 +98,10 @@ jobs:
             build_type: Release
 
           # Windows - MSVC
-          # Temporarily disabled - CMake preset configuration issues
-          # - os: windows-2022
-          #   compiler: msvc
-          #   version: 193
-          #   build_type: Release
+          - os: windows-2022
+            compiler: msvc
+            version: 193
+            build_type: Release
 
     steps:
       - name: Checkout code

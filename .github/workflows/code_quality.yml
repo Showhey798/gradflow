@@ -88,8 +88,6 @@ jobs:
         fi
 
   clang-tidy:
-    # Temporarily disabled until src/ directory has C++ files
-    if: false
     name: Clang-Tidy Static Analysis
     runs-on: ubuntu-latest
 
@@ -137,8 +135,8 @@ jobs:
 
     - name: Run clang-tidy
       run: |
-        # すべての C++ ソースファイルに対して clang-tidy を実行
-        FILES=$(find src include -name '*.cpp' -o -name '*.hpp' 2>/dev/null || true)
+        # tests/ と include/ ディレクトリの C++ ファイルをチェック
+        FILES=$(find tests include -name '*.cpp' -o -name '*.hpp' 2>/dev/null || true)
         if [ -n "$FILES" ]; then
           echo "$FILES" | xargs clang-tidy-15 \
             -p build/compile_commands.json \
