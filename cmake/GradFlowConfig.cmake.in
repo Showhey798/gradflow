@@ -1,0 +1,27 @@
+@PACKAGE_INIT@
+
+# GradFlow CMake Configuration File
+# This file provides information about the GradFlow library to other CMake projects.
+
+include(CMakeFindDependencyMacro)
+
+# Find dependencies
+# Uncomment and add find_dependency() calls for any required dependencies
+# Example:
+# find_dependency(SomePackage REQUIRED)
+
+# Include the targets file
+include("${CMAKE_CURRENT_LIST_DIR}/GradFlowTargets.cmake")
+
+# Check that all requested components are available
+check_required_components(GradFlow)
+
+# Provide information about the library
+set(GradFlow_VERSION @PROJECT_VERSION@)
+set(GradFlow_VERSION_MAJOR @PROJECT_VERSION_MAJOR@)
+set(GradFlow_VERSION_MINOR @PROJECT_VERSION_MINOR@)
+set(GradFlow_VERSION_PATCH @PROJECT_VERSION_PATCH@)
+
+# Set variables for compatibility
+set(GradFlow_INCLUDE_DIRS "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+set(GradFlow_LIBRARIES GradFlow::GradFlow)

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(FullScratchML
+project(GradFlow
     VERSION 0.1.0
     DESCRIPTION "A comprehensive C++ machine learning library built from scratch"
     LANGUAGES CXX
@@ -29,12 +29,15 @@ endif()
 # Build Options
 # ========================================
 
-option(FULLSCRATCH_BUILD_TESTS "Build tests" ON)
-option(FULLSCRATCH_BUILD_EXAMPLES "Build examples" ON)
-option(FULLSCRATCH_BUILD_BENCHMARKS "Build benchmarks" OFF)
-option(FULLSCRATCH_BUILD_PYTHON "Build Python bindings" OFF)
-option(FULLSCRATCH_ENABLE_COVERAGE "Enable code coverage" OFF)
-option(FULLSCRATCH_ENABLE_SANITIZERS "Enable sanitizers" OFF)
+option(GRADFLOW_BUILD_TESTS "Build tests" ON)
+option(GRADFLOW_BUILD_EXAMPLES "Build examples" ON)
+option(GRADFLOW_BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(GRADFLOW_BUILD_PYTHON "Build Python bindings" OFF)
+option(GRADFLOW_ENABLE_COVERAGE "Enable code coverage" OFF)
+option(GRADFLOW_ENABLE_SANITIZERS "Enable sanitizers" OFF)
+option(GRADFLOW_ENABLE_METAL "Enable Metal GPU backend" OFF)
+option(GRADFLOW_ENABLE_CUDA "Enable CUDA GPU backend" OFF)
+option(GRADFLOW_ENABLE_MULTI_GPU "Enable Multi-GPU support" OFF)
 
 # ========================================
 # Dependencies
@@ -79,13 +82,13 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 # Sanitizers (only for Debug builds)
-if(FULLSCRATCH_ENABLE_SANITIZERS AND NOT MSVC)
+if(GRADFLOW_ENABLE_SANITIZERS AND NOT MSVC)
     add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
     add_link_options(-fsanitize=address,undefined)
 endif()
 
 # Code Coverage (only for Debug builds)
-if(FULLSCRATCH_ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(GRADFLOW_ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         add_compile_options(--coverage)
         add_link_options(--coverage)
@@ -120,23 +123,23 @@ endif()
 # add_subdirectory(src)
 
 # Add tests
-if(FULLSCRATCH_BUILD_TESTS)
+if(GRADFLOW_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
 
 # Add examples
-if(FULLSCRATCH_BUILD_EXAMPLES)
+if(GRADFLOW_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
 # Add benchmarks
-if(FULLSCRATCH_BUILD_BENCHMARKS)
+if(GRADFLOW_BUILD_BENCHMARKS)
     add_subdirectory(benchmarks)
 endif()
 
 # Add Python bindings
-if(FULLSCRATCH_BUILD_PYTHON)
+if(GRADFLOW_BUILD_PYTHON)
     add_subdirectory(python)
 endif()
 
@@ -147,7 +150,7 @@ endif()
 include(GNUInstallDirs)
 
 install(TARGETS fullscratch
-    EXPORT FullScratchMLTargets
+    EXPORT GradFlowTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -160,31 +163,31 @@ install(DIRECTORY include/
 )
 
 # Export CMake targets
-install(EXPORT FullScratchMLTargets
-    FILE FullScratchMLTargets.cmake
-    NAMESPACE FullScratchML::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/FullScratchML
+install(EXPORT GradFlowTargets
+    FILE GradFlowTargets.cmake
+    NAMESPACE GradFlow::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/GradFlow
 )
 
 # Create and install Config file
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
-    ${PROJECT_SOURCE_DIR}/cmake/FullScratchMLConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/FullScratchMLConfig.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/FullScratchML
+    ${PROJECT_SOURCE_DIR}/cmake/GradFlowConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/GradFlowConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/GradFlow
 )
 
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/FullScratchMLConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/GradFlowConfigVersion.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion
 )
 
 install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/FullScratchMLConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/FullScratchMLConfigVersion.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/FullScratchML
+    ${CMAKE_CURRENT_BINARY_DIR}/GradFlowConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/GradFlowConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/GradFlow
 )
 
 # ========================================
@@ -193,7 +196,7 @@ install(FILES
 
 message(STATUS "")
 message(STATUS "========================================")
-message(STATUS "FullScratchML Configuration Summary")
+message(STATUS "GradFlow Configuration Summary")
 message(STATUS "========================================")
 message(STATUS "Version: ${PROJECT_VERSION}")
 message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
@@ -201,11 +204,11 @@ message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "")
 message(STATUS "Build Options:")
-message(STATUS "  Build Tests: ${FULLSCRATCH_BUILD_TESTS}")
-message(STATUS "  Build Examples: ${FULLSCRATCH_BUILD_EXAMPLES}")
-message(STATUS "  Build Benchmarks: ${FULLSCRATCH_BUILD_BENCHMARKS}")
-message(STATUS "  Build Python Bindings: ${FULLSCRATCH_BUILD_PYTHON}")
-message(STATUS "  Enable Coverage: ${FULLSCRATCH_ENABLE_COVERAGE}")
-message(STATUS "  Enable Sanitizers: ${FULLSCRATCH_ENABLE_SANITIZERS}")
+message(STATUS "  Build Tests: ${GRADFLOW_BUILD_TESTS}")
+message(STATUS "  Build Examples: ${GRADFLOW_BUILD_EXAMPLES}")
+message(STATUS "  Build Benchmarks: ${GRADFLOW_BUILD_BENCHMARKS}")
+message(STATUS "  Build Python Bindings: ${GRADFLOW_BUILD_PYTHON}")
+message(STATUS "  Enable Coverage: ${GRADFLOW_ENABLE_COVERAGE}")
+message(STATUS "  Enable Sanitizers: ${GRADFLOW_ENABLE_SANITIZERS}")
 message(STATUS "========================================")
 message(STATUS "")

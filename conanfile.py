@@ -2,11 +2,11 @@ from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
 
 
-class FullScratchMLConan(ConanFile):
-    name = "fullscratchml"
+class GradFlowConan(ConanFile):
+    name = "gradflow"
     version = "0.1.0"
     license = "MIT"
-    author = "FullScratchML Contributors"
+    author = "GradFlow Contributors"
     url = "https://github.com/yourusername/fullScratchLibs"
     description = "A comprehensive C++ machine learning library built from scratch"
     topics = ("machine-learning", "deep-learning", "neural-networks", "cpp", "header-only")
@@ -58,12 +58,12 @@ class FullScratchMLConan(ConanFile):
         deps.generate()
 
         tc = CMakeToolchain(self)
-        tc.variables["FULLSCRATCH_BUILD_TESTS"] = self.options.build_tests
-        tc.variables["FULLSCRATCH_BUILD_EXAMPLES"] = self.options.build_examples
-        tc.variables["FULLSCRATCH_BUILD_BENCHMARKS"] = self.options.build_benchmarks
-        tc.variables["FULLSCRATCH_BUILD_PYTHON"] = self.options.build_python
-        tc.variables["FULLSCRATCH_ENABLE_COVERAGE"] = self.options.enable_coverage
-        tc.variables["FULLSCRATCH_ENABLE_SANITIZERS"] = self.options.enable_sanitizers
+        tc.variables["GRADFLOW_BUILD_TESTS"] = self.options.build_tests
+        tc.variables["GRADFLOW_BUILD_EXAMPLES"] = self.options.build_examples
+        tc.variables["GRADFLOW_BUILD_BENCHMARKS"] = self.options.build_benchmarks
+        tc.variables["GRADFLOW_BUILD_PYTHON"] = self.options.build_python
+        tc.variables["GRADFLOW_ENABLE_COVERAGE"] = self.options.enable_coverage
+        tc.variables["GRADFLOW_ENABLE_SANITIZERS"] = self.options.enable_sanitizers
         tc.generate()
 
     def build(self):
@@ -76,7 +76,7 @@ class FullScratchMLConan(ConanFile):
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.libs = ["fullscratch"]
+        self.cpp_info.libs = ["gradflow"]
         self.cpp_info.includedirs = ["include"]
-        self.cpp_info.set_property("cmake_file_name", "FullScratchML")
-        self.cpp_info.set_property("cmake_target_name", "FullScratchML::fullscratch")
+        self.cpp_info.set_property("cmake_file_name", "GradFlow")
+        self.cpp_info.set_property("cmake_target_name", "GradFlow::gradflow")

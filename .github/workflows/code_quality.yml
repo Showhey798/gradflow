@@ -1,0 +1,388 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  python-quality:
+    name: Python Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Install cargo-make
+      run: |
+        cargo install --locked cargo-make
+
+    - name: Install dependencies
+      run: |
+        uv pip install --system -e ".[dev]"
+
+    - name: Run ruff format check
+      run: |
+        ruff format --check python
+
+    - name: Run ruff lint
+      run: |
+        ruff check python
+
+    - name: Run pyright type check
+      run: |
+        pyright python
+
+    - name: Check for common issues
+      run: |
+        # Check for print statements in source code (not tests)
+        ! grep -r "print(" python/gradflow --include="*.py" || (echo "Found print() statements in source code" && exit 1)
+
+        # Check for TODO/FIXME comments
+        grep -r "TODO\|FIXME" python/gradflow --include="*.py" || echo "No TODO/FIXME found"
+
+
+  clang-format:
+    name: Clang-Format Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install clang-format
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format-15
+
+    - name: Run clang-format
+      run: |
+        # Find C++ files and apply clang-format (skip if no files found)
+        FILES=$(find include src tests -name '*.cpp' -o -name '*.hpp' -o -name '*.h' 2>/dev/null || true)
+        if [ -n "$FILES" ]; then
+          echo "$FILES" | xargs clang-format-15 -style=file -i -fallback-style=none
+        else
+          echo "No C++ source files found, skipping clang-format check"
+        fi
+
+    - name: Check for formatting changes
+      run: |
+        if git diff --exit-code; then
+          echo "Code is properly formatted."
+        else
+          echo "Code formatting issues detected. Please run clang-format."
+          git diff
+          exit 1
+        fi
+
+  clang-tidy:
+    name: Clang-Tidy Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          ninja-build \
+          clang-15 \
+          clang-tidy-15
+        pip install conan==2.0.17
+
+    - name: Configure Conan
+      run: |
+        conan profile detect --force
+        conan install . \
+          --output-folder=build \
+          --build=missing \
+          --settings=build_type=Debug
+
+    - name: Configure CMake
+      env:
+        CC: clang-15
+        CXX: clang++-15
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DGRADFLOW_BUILD_TESTS=OFF \
+          -DGRADFLOW_BUILD_PYTHON=OFF
+
+    - name: Run clang-tidy
+      run: |
+        # すべての C++ ソースファイルに対して clang-tidy を実行
+        FILES=$(find src include -name '*.cpp' -o -name '*.hpp' 2>/dev/null || true)
+        if [ -n "$FILES" ]; then
+          echo "$FILES" | xargs clang-tidy-15 \
+            -p build/compile_commands.json \
+            --config-file=.clang-tidy \
+            --warnings-as-errors='*'
+        else
+          echo "No C++ source files found, skipping clang-tidy check"
+        fi
+
+    - name: Upload clang-tidy results
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: clang-tidy-report
+        path: build/clang-tidy-report.txt
+        retention-days: 30
+
+  cppcheck:
+    # Temporarily disabled until C++ source files are implemented
+    if: false
+    name: Cppcheck Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install cppcheck
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cppcheck
+
+    - name: Run cppcheck
+      run: |
+        cppcheck \
+          --enable=all \
+          --error-exitcode=1 \
+          --inline-suppr \
+          --suppress=missingIncludeSystem \
+          --suppress=unusedFunction \
+          --suppress=unmatchedSuppression \
+          --std=c++17 \
+          --language=c++ \
+          --force \
+          --xml \
+          --xml-version=2 \
+          --output-file=cppcheck-report.xml \
+          -I include \
+          src
+
+    - name: Generate HTML report
+      if: always()
+      run: |
+        sudo apt-get install -y cppcheck-htmlreport
+        cppcheck-htmlreport \
+          --file=cppcheck-report.xml \
+          --report-dir=cppcheck-html \
+          --source-dir=.
+
+    - name: Upload cppcheck results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cppcheck-report
+        path: |
+          cppcheck-report.xml
+          cppcheck-html/
+        retention-days: 30
+
+  include-what-you-use:
+    # Temporarily disabled until C++ source files are implemented
+    if: false
+    name: Include-What-You-Use Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          ninja-build \
+          clang-15 \
+          iwyu
+        pip install conan==2.0.17
+
+    - name: Configure Conan
+      run: |
+        conan profile detect --force
+        conan install . \
+          --output-folder=build \
+          --build=missing \
+          --settings=build_type=Debug
+
+    - name: Configure CMake
+      env:
+        CC: clang-15
+        CXX: clang++-15
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DCMAKE_CXX_INCLUDE_WHAT_YOU_USE="iwyu;-Xiwyu;--error_always" \
+          -DGRADFLOW_BUILD_TESTS=OFF
+
+    - name: Build with IWYU
+      continue-on-error: true
+      run: |
+        cmake --build build 2>&1 | tee iwyu-report.txt
+
+    - name: Check IWYU suggestions
+      run: |
+        if grep -q "should add these lines:" iwyu-report.txt; then
+          echo "Include-What-You-Use found issues. Please review."
+          cat iwyu-report.txt
+          exit 1
+        else
+          echo "Include-What-You-Use check passed."
+        fi
+
+    - name: Upload IWYU report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: iwyu-report
+        path: iwyu-report.txt
+        retention-days: 30
+
+  cmake-format:
+    # Temporarily disabled - formatting enforcement can be added later
+    if: false
+    name: CMake Format Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install cmake-format
+      run: |
+        pip install cmakelang
+
+    - name: Run cmake-format
+      run: |
+        find . -name 'CMakeLists.txt' -o -name '*.cmake' | \
+          xargs cmake-format -i
+
+    - name: Check for formatting changes
+      run: |
+        if git diff --exit-code; then
+          echo "CMake files are properly formatted."
+        else
+          echo "CMake formatting issues detected. Please run cmake-format."
+          git diff
+          exit 1
+        fi
+
+  complexity-analysis:
+    # Temporarily disabled until C++ source files are implemented
+    if: false
+    name: Code Complexity Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install lizard
+      run: |
+        pip install lizard
+
+    - name: Run complexity analysis
+      run: |
+        lizard \
+          -l cpp \
+          -w \
+          -C 15 \
+          -L 1000 \
+          src include \
+          > complexity-report.txt || true
+
+    - name: Check complexity thresholds
+      run: |
+        if grep -q "warning:" complexity-report.txt; then
+          echo "High complexity functions found. Consider refactoring."
+          cat complexity-report.txt
+          # 警告のみで失敗させない
+        else
+          echo "Complexity check passed."
+        fi
+
+    - name: Upload complexity report
+      uses: actions/upload-artifact@v4
+      with:
+        name: complexity-report
+        path: complexity-report.txt
+        retention-days: 30
+
+  security-scan:
+    # Temporarily disabled - can be enabled when needed
+    if: false
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Upload Trivy results as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: trivy-security-report
+        path: trivy-results.sarif
+        retention-days: 30

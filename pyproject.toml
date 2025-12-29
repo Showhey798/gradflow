@@ -1,0 +1,293 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel>=0.40.0", "Cython>=3.0.0", "numpy>=1.21.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gradflow"
+version = "0.1.0"
+description = "A comprehensive C++ machine learning library with Python bindings, built from scratch"
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+license = {text = "MIT"}
+authors = [
+    {name = "GradFlow Contributors"}
+]
+maintainers = [
+    {name = "GradFlow Contributors"}
+]
+keywords = [
+    "machine-learning",
+    "deep-learning",
+    "autograd",
+    "automatic-differentiation",
+    "neural-networks",
+    "transformer",
+    "cpp",
+    "python",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+]
+
+dependencies = [
+    "numpy>=1.21.0,<2.0.0",
+    "scipy>=1.7.0",
+    "tqdm>=4.62.0",
+]
+
+[project.optional-dependencies]
+viz = [
+    "matplotlib>=3.5.0",
+]
+data = [
+    "pandas>=1.3.0",
+]
+onnx = [
+    "onnx>=1.12.0",
+    "onnxruntime>=1.13.0",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.3.0",
+    "pytest-timeout>=2.1.0",
+    "pytest-benchmark>=4.0.0",
+    "hypothesis>=6.82.0",
+    "ruff>=0.1.0",
+    "pyright>=1.1.340",
+    "sphinx>=7.0.0",
+    "sphinx-rtd-theme>=1.3.0",
+    "pre-commit>=3.3.0",
+]
+all = [
+    "gradflow[viz,data,onnx,dev]",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/gradflow"
+Documentation = "https://gradflow.readthedocs.io"
+Repository = "https://github.com/yourusername/gradflow.git"
+Issues = "https://github.com/yourusername/gradflow/issues"
+Changelog = "https://github.com/yourusername/gradflow/blob/main/CHANGELOG.md"
+
+# ========================================
+# Tool Configuration
+# ========================================
+
+[tool.setuptools]
+packages = ["gradflow"]
+package-dir = {"" = "python"}
+
+[tool.setuptools.package-data]
+gradflow = ["py.typed", "*.pyi"]
+
+# ========================================
+# Pyright (型チェック)
+# ========================================
+[tool.pyright]
+include = ["python"]
+exclude = [
+    "**/__pycache__",
+    "**/node_modules",
+    ".venv",
+    "build",
+    "dist",
+]
+pythonVersion = "3.9"
+pythonPlatform = "All"
+typeCheckingMode = "strict"
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportUnusedImport = true
+reportUnusedClass = true
+reportUnusedFunction = true
+reportUnusedVariable = true
+reportDuplicateImport = true
+reportOptionalSubscript = true
+reportOptionalMemberAccess = true
+reportOptionalCall = true
+reportOptionalIterable = true
+reportOptionalContextManager = true
+reportOptionalOperand = true
+reportTypedDictNotRequiredAccess = false
+reportPrivateImportUsage = true
+reportConstantRedefinition = true
+reportIncompatibleMethodOverride = true
+reportIncompatibleVariableOverride = true
+reportUntypedFunctionDecorator = false
+reportUntypedClassDecorator = false
+reportUnnecessaryIsInstance = true
+reportUnnecessaryCast = true
+
+# ========================================
+# pytest
+# ========================================
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
+pythonpath = ["python"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+minversion = "7.0"
+addopts = [
+    "-v",
+    "-W", "default",
+    "--doctest-modules",
+    "--failed-first",
+    "--showlocals",
+    "--cov=gradflow",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=80",
+    "-n", "auto",
+    "--timeout=300",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "slow: 実行時間が長いテスト",
+    "integration: 統合テスト",
+    "unit: 単体テスト",
+    "gpu: GPU が必要なテスト",
+    "metal: Metal GPU が必要なテスト（macOS）",
+    "cuda: CUDA GPU が必要なテスト（NVIDIA）",
+    "benchmark: ベンチマークテスト",
+    "property: プロパティベーステスト（hypothesis）",
+    "smoke: スモークテスト",
+    "numerical: 数値勾配チェックを含むテスト",
+]
+filterwarnings = [
+    "default",
+    "default::DeprecationWarning",
+]
+
+# ========================================
+# coverage.py
+# ========================================
+[tool.coverage.run]
+source = ["gradflow"]
+branch = true
+parallel = true
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if False:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "@(typing\\.)?overload",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# ========================================
+# Ruff (高速 linter/formatter)
+# ========================================
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+src = ["python"]
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "*.egg-info",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "UP",    # pyupgrade
+    "SIM",   # flake8-simplify
+    "N",     # pep8-naming
+    "D",     # pydocstyle
+    "PL",    # pylint
+    "RUF",   # ruff-specific rules
+    "ANN",   # flake8-annotations
+    "S",     # flake8-bandit (security)
+    "A",     # flake8-builtins
+    "COM",   # flake8-commas
+    "C90",   # mccabe complexity
+    "T20",   # flake8-print
+]
+
+ignore = [
+    "E501",    # line too long (handled by formatter)
+    "B008",    # do not perform function calls in argument defaults
+    "C901",    # too complex
+    "PLR0913", # too many arguments
+    "D100",    # missing docstring in public module
+    "D104",    # missing docstring in public package
+    "D203",    # 1 blank line required before class docstring (incompatible with D211)
+    "D213",    # multi-line docstring summary should start at the second line (incompatible with D212)
+    "ANN101",  # missing type annotation for self
+    "ANN102",  # missing type annotation for cls
+    "ANN401",  # dynamically typed expressions (Any) are disallowed
+    "S101",    # use of assert detected (pytest uses assert)
+    "T201",    # print found (allowed in some contexts)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403", "D"]
+"tests/*" = ["D", "S101", "ANN", "PLR2004"]
+"python/tests/*" = ["D", "S101", "ANN", "PLR2004"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["gradflow"]
+known-third-party = ["numpy", "scipy", "matplotlib", "pandas", "torch", "tensorflow", "jax"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
