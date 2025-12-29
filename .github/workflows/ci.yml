@@ -125,35 +125,28 @@ jobs:
         run: |
           conan install . --output-folder=build --build=missing -s build_type=${{ matrix.build_type }}
 
-      - name: Detect CMake preset
-        id: preset
-        shell: bash
-        run: |
-          # Detect which preset is available
-          if [ -f CMakePresets.json ]; then
-            if grep -q '"conan-default"' CMakePresets.json; then
-              echo "PRESET_NAME=conan-default" >> $GITHUB_OUTPUT
-            else
-              echo "PRESET_NAME=conan-release" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "PRESET_NAME=conan-release" >> $GITHUB_OUTPUT
-          fi
-
       - name: Configure CMake
         shell: bash
         run: |
-          cmake --preset ${{ steps.preset.outputs.PRESET_NAME }}
+          # Try conan-default first (Windows), then fall back to conan-release (Linux/macOS)
+          if cmake --preset conan-default 2>/dev/null; then
+            echo "Using conan-default preset"
+            echo "CMAKE_PRESET=conan-default" >> $GITHUB_ENV
+          else
+            echo "Using conan-release preset"
+            cmake --preset conan-release
+            echo "CMAKE_PRESET=conan-release" >> $GITHUB_ENV
+          fi
 
       - name: Build
         shell: bash
         run: |
-          cmake --build --preset ${{ steps.preset.outputs.PRESET_NAME }} --parallel
+          cmake --build --preset ${CMAKE_PRESET} --parallel
 
       - name: Run tests
         shell: bash
         run: |
-          ctest --preset ${{ steps.preset.outputs.PRESET_NAME }} --output-on-failure
+          ctest --preset ${CMAKE_PRESET} --output-on-failure
 
   # ============================================
   # Code Coverage
