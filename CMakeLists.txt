@@ -35,6 +35,9 @@ option(GRADFLOW_BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(GRADFLOW_BUILD_PYTHON "Build Python bindings" OFF)
 option(GRADFLOW_ENABLE_COVERAGE "Enable code coverage" OFF)
 option(GRADFLOW_ENABLE_SANITIZERS "Enable sanitizers" OFF)
+option(GRADFLOW_ENABLE_METAL "Enable Metal GPU backend" OFF)
+option(GRADFLOW_ENABLE_CUDA "Enable CUDA GPU backend" OFF)
+option(GRADFLOW_ENABLE_MULTI_GPU "Enable Multi-GPU support" OFF)
 
 # ========================================
 # Dependencies
