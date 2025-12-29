@@ -125,16 +125,34 @@ jobs:
           conan install . --output-folder=build --build=missing -s build_type=${{ matrix.build_type }}
 
       - name: Configure CMake
+        shell: bash
         run: |
-          cmake --preset conan-release
+          # Windows uses conan-default, Linux/macOS use conan-release
+          if [ -f CMakePresets.json ] && grep -q '"conan-default"' CMakePresets.json; then
+            cmake --preset conan-default
+          else
+            cmake --preset conan-release
+          fi
 
       - name: Build
+        shell: bash
         run: |
-          cmake --build --preset conan-release --parallel
+          # Windows uses conan-default, Linux/macOS use conan-release
+          if [ -f CMakePresets.json ] && grep -q '"conan-default"' CMakePresets.json; then
+            cmake --build --preset conan-default --parallel
+          else
+            cmake --build --preset conan-release --parallel
+          fi
 
       - name: Run tests
+        shell: bash
         run: |
-          ctest --preset conan-release --output-on-failure
+          # Windows uses conan-default, Linux/macOS use conan-release
+          if [ -f CMakePresets.json ] && grep -q '"conan-default"' CMakePresets.json; then
+            ctest --preset conan-default --output-on-failure
+          else
+            ctest --preset conan-release --output-on-failure
+          fi
 
   # ============================================
   # Code Coverage
