@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include <gradflow/autograd/shape.hpp>
+#include <gtest/gtest.h>
 
 namespace gradflow {
 namespace test {
