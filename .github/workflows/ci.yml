@@ -141,14 +141,17 @@ jobs:
           fi
 
       - name: Configure CMake
+        shell: bash
         run: |
           cmake --preset ${{ steps.preset.outputs.PRESET_NAME }}
 
       - name: Build
+        shell: bash
         run: |
           cmake --build --preset ${{ steps.preset.outputs.PRESET_NAME }} --parallel
 
       - name: Run tests
+        shell: bash
         run: |
           ctest --preset ${{ steps.preset.outputs.PRESET_NAME }} --output-on-failure
 
