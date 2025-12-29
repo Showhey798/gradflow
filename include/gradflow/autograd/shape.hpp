@@ -47,8 +47,7 @@ public:
         if (dims_.empty()) {
             return 1;  // Scalar has size 1
         }
-        return std::accumulate(dims_.begin(), dims_.end(), size_t(1),
-                               std::multiplies<size_t>());
+        return std::accumulate(dims_.begin(), dims_.end(), size_t(1), std::multiplies<size_t>());
     }
 
     /**
