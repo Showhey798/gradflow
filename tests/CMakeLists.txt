@@ -85,6 +85,11 @@ fullscratch_add_test(optimizer_test
     SOURCES test_optimizer.cpp
 )
 
+# Operations tests
+fullscratch_add_test(ops_test
+    SOURCES test_ops.cpp
+)
+
 # TODO: Implement these tests
 # # Matrix operations tests
 # fullscratch_add_test(matrix_test
@@ -137,6 +142,7 @@ add_custom_target(check
         storage_test
         tensor_test
         optimizer_test
+        ops_test
         # matrix_test
         # vector_test
         # activation_test
