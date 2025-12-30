@@ -31,8 +31,8 @@ public:
         }
 
         // Save inputs for backward pass
-        this->save_for_backward("x", x);
-        this->save_for_backward("y", y);
+        this->saveForBackward("x", x);
+        this->saveForBackward("y", y);
 
         // Compute output
         Tensor<T> output(x.shape());
@@ -74,13 +74,13 @@ TEST(OperationTest, SaveTensors) {
     auto output = op->forward({x, y});
 
     // Verify tensors were saved
-    EXPECT_TRUE(op->has_saved_tensor_for_test("x"));
-    EXPECT_TRUE(op->has_saved_tensor_for_test("y"));
-    EXPECT_EQ(op->num_saved_tensors_for_test(), 2);
+    EXPECT_TRUE(op->hasSavedTensorForTest("x"));
+    EXPECT_TRUE(op->hasSavedTensorForTest("y"));
+    EXPECT_EQ(op->numSavedTensorsForTest(), 2);
 
     // Verify saved tensor values
-    auto saved_x = op->get_saved_tensor_for_test("x");
-    auto saved_y = op->get_saved_tensor_for_test("y");
+    auto saved_x = op->getSavedTensorForTest("x");
+    auto saved_y = op->getSavedTensorForTest("y");
 
     EXPECT_EQ(saved_x.shape(), x.shape());
     EXPECT_EQ(saved_y.shape(), y.shape());
@@ -108,13 +108,13 @@ TEST(OperationTest, GetSavedTensors) {
     auto output = op->forward({x, y});
 
     // Verify we can retrieve saved tensors
-    EXPECT_TRUE(op->has_saved_tensor_for_test("x"));
-    EXPECT_TRUE(op->has_saved_tensor_for_test("y"));
-    EXPECT_EQ(op->num_saved_tensors_for_test(), 2);
+    EXPECT_TRUE(op->hasSavedTensorForTest("x"));
+    EXPECT_TRUE(op->hasSavedTensorForTest("y"));
+    EXPECT_EQ(op->numSavedTensorsForTest(), 2);
 
     // Get saved tensors
-    auto saved_x = op->get_saved_tensor_for_test("x");
-    auto saved_y = op->get_saved_tensor_for_test("y");
+    auto saved_x = op->getSavedTensorForTest("x");
+    auto saved_y = op->getSavedTensorForTest("y");
 
     // Verify saved values match original values
     EXPECT_EQ(saved_x.shape(), x.shape());

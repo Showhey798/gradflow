@@ -52,6 +52,14 @@ class Operation : public std::enable_shared_from_this<Operation<T>> {
 public:
     virtual ~Operation() = default;
 
+    // Delete copy operations (operations should not be copied)
+    Operation(const Operation&) = delete;
+    Operation& operator=(const Operation&) = delete;
+
+    // Delete move operations (operations should not be moved)
+    Operation(Operation&&) = delete;
+    Operation& operator=(Operation&&) = delete;
+
     /**
      * @brief Forward pass: compute output from inputs
      *
@@ -59,7 +67,7 @@ public:
      * It should:
      * 1. Validate inputs
      * 2. Perform the computation
-     * 3. Save any intermediate values needed for backward pass using save_for_backward()
+     * 3. Save any intermediate values needed for backward pass using saveForBackward()
      *
      * @param inputs Vector of input tensors
      * @return Output tensor
@@ -105,7 +113,7 @@ public:
      *
      * @param inputs Vector of input variables
      */
-    void set_inputs(const std::vector<Variable<T>*>& inputs) { inputs_ = inputs; }
+    void setInputs(const std::vector<Variable<T>*>& inputs) { inputs_ = inputs; }
 
     /**
      * @brief Returns the name of this operation (for debugging)
@@ -115,7 +123,7 @@ public:
      *
      * @return Operation name
      */
-    virtual std::string name() const { return "Operation"; }
+    [[nodiscard]] virtual std::string name() const { return "Operation"; }
 
     /**
      * @brief Check if a tensor with given name was saved (public for testing)
@@ -123,7 +131,7 @@ public:
      * @param name Identifier to check
      * @return True if tensor exists
      */
-    bool has_saved_tensor_for_test(const std::string& name) const {
+    [[nodiscard]] bool hasSavedTensorForTest(const std::string& name) const {
         return saved_tensors_.find(name) != saved_tensors_.end();
     }
 
@@ -134,7 +142,7 @@ public:
      *
      * @return Number of saved tensors
      */
-    size_t num_saved_tensors_for_test() const { return saved_tensors_.size(); }
+    [[nodiscard]] size_t numSavedTensorsForTest() const { return saved_tensors_.size(); }
 
     /**
      * @brief Retrieve a tensor saved during forward pass (public for testing)
@@ -143,7 +151,7 @@ public:
      * @return The saved tensor
      * @throws std::out_of_range if name not found
      */
-    const Tensor<T>& get_saved_tensor_for_test(const std::string& name) const {
+    [[nodiscard]] const Tensor<T>& getSavedTensorForTest(const std::string& name) const {
         return saved_tensors_.at(name);
     }
 
@@ -153,9 +161,11 @@ public:
      * This can be called after backward pass to free memory.
      * Note: Tensors are automatically cleaned up when the operation is destroyed.
      */
-    void clear_saved_tensors_for_test() { saved_tensors_.clear(); }
+    void clearSavedTensorsForTest() { saved_tensors_.clear(); }
 
 protected:
+    Operation() = default;
+
     /**
      * @brief Save a tensor for use in backward pass
      *
@@ -166,20 +176,20 @@ protected:
      * @code
      * // In forward():
      * auto output = compute_output(inputs);
-     * save_for_backward("input", inputs[0]);
-     * save_for_backward("output", output);
+     * saveForBackward("input", inputs[0]);
+     * saveForBackward("output", output);
      * return output;
      *
      * // In backward():
-     * auto input = get_saved_tensor("input");
-     * auto output = get_saved_tensor("output");
+     * auto input = getSavedTensor("input");
+     * auto output = getSavedTensor("output");
      * // compute gradients using saved values
      * @endcode
      *
      * @param name Identifier for the saved tensor
      * @param tensor Tensor to save
      */
-    void save_for_backward(const std::string& name, const Tensor<T>& tensor) {
+    void saveForBackward(const std::string& name, const Tensor<T>& tensor) {
         saved_tensors_[name] = tensor;
     }
 
@@ -190,7 +200,7 @@ protected:
      * @return The saved tensor
      * @throws std::out_of_range if name not found
      */
-    const Tensor<T>& get_saved_tensor(const std::string& name) const {
+    [[nodiscard]] const Tensor<T>& getSavedTensor(const std::string& name) const {
         return saved_tensors_.at(name);
     }
 
@@ -200,7 +210,7 @@ protected:
      * @param name Identifier to check
      * @return True if tensor exists
      */
-    bool has_saved_tensor(const std::string& name) const {
+    [[nodiscard]] bool hasSavedTensor(const std::string& name) const {
         return saved_tensors_.find(name) != saved_tensors_.end();
     }
 
@@ -210,7 +220,7 @@ protected:
      * This can be called after backward pass to free memory.
      * Note: Tensors are automatically cleaned up when the operation is destroyed.
      */
-    void clear_saved_tensors() { saved_tensors_.clear(); }
+    void clearSavedTensors() { saved_tensors_.clear(); }
 
     /**
      * @brief Returns the number of saved tensors
@@ -219,7 +229,7 @@ protected:
      *
      * @return Number of saved tensors
      */
-    size_t num_saved_tensors() const { return saved_tensors_.size(); }
+    [[nodiscard]] size_t numSavedTensors() const { return saved_tensors_.size(); }
 
 private:
     /**
