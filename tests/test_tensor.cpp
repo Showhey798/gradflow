@@ -24,10 +24,10 @@ TEST_F(TensorTest, ConstructionDefault) {
 }
 
 TEST_F(TensorTest, ConstructionWithShape) {
-    const Shape shape({2, 3});
-    Tensor<float> t(shape);
+    const Shape kShape({2, 3});
+    Tensor<float> t(kShape);
 
-    EXPECT_EQ(t.shape(), shape);
+    EXPECT_EQ(t.shape(), kShape);
     EXPECT_EQ(t.ndim(), 2);
     EXPECT_EQ(t.size(), 6);
     EXPECT_NE(t.data(), nullptr);
@@ -35,14 +35,14 @@ TEST_F(TensorTest, ConstructionWithShape) {
 }
 
 TEST_F(TensorTest, ConstructionFromInitializerList1D) {
-    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F});
+    const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F});
 
-    EXPECT_EQ(t.ndim(), 1);
-    EXPECT_EQ(t.size(), 4);
-    EXPECT_FLOAT_EQ((t[{0}]), 1.0F);
-    EXPECT_FLOAT_EQ((t[{1}]), 2.0F);
-    EXPECT_FLOAT_EQ((t[{2}]), 3.0F);
-    EXPECT_FLOAT_EQ((t[{3}]), 4.0F);
+    EXPECT_EQ(kT.ndim(), 1);
+    EXPECT_EQ(kT.size(), 4);
+    EXPECT_FLOAT_EQ((kT[{0}]), 1.0F);
+    EXPECT_FLOAT_EQ((kT[{1}]), 2.0F);
+    EXPECT_FLOAT_EQ((kT[{2}]), 3.0F);
+    EXPECT_FLOAT_EQ((kT[{3}]), 4.0F);
 }
 
 TEST_F(TensorTest, ConstructionFromInitializerList2D) {
@@ -60,21 +60,21 @@ TEST_F(TensorTest, ConstructionFromInitializerList2D) {
 }
 
 TEST_F(TensorTest, ConstructionFromShapeAndData) {
-    const Shape shape({2, 3});
-    const std::vector<float> data = {1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F};
-    Tensor<float> t(shape, data);
+    const Shape kShape({2, 3});
+    const std::vector<float> kData = {1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F};
+    Tensor<float> t(kShape, kData);
 
-    EXPECT_EQ(t.shape(), shape);
+    EXPECT_EQ(t.shape(), kShape);
     EXPECT_EQ(t.size(), 6);
     EXPECT_FLOAT_EQ((t[{0, 0}]), 1.0F);
     EXPECT_FLOAT_EQ((t[{1, 2}]), 6.0F);
 }
 
 TEST_F(TensorTest, ConstructionFromShapeAndDataMismatch) {
-    const Shape shape({2, 3});
-    const std::vector<float> data = {1.0F, 2.0F};  // Wrong size
+    const Shape kShape({2, 3});
+    const std::vector<float> kData = {1.0F, 2.0F};  // Wrong size
 
-    EXPECT_THROW(Tensor<float> t(shape, data), std::invalid_argument);
+    EXPECT_THROW(Tensor<float> t(kShape, kData), std::invalid_argument);
 }
 
 TEST_F(TensorTest, ConstructionCopyAndMove) {
@@ -124,10 +124,10 @@ TEST_F(TensorTest, ElementAccessOutOfBounds) {
 // ========================================
 
 TEST_F(TensorTest, ReshapeContiguous) {
-    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
-    EXPECT_TRUE(t.is_contiguous());
+    const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
+    EXPECT_TRUE(kT.is_contiguous());
 
-    auto reshaped = t.reshape(Shape({2, 3}));
+    auto reshaped = kT.reshape(Shape({2, 3}));
 
     EXPECT_EQ(reshaped.shape(), Shape({2, 3}));
     EXPECT_EQ(reshaped.size(), 6);
@@ -149,16 +149,16 @@ TEST_F(TensorTest, ReshapeNonContiguous) {
 }
 
 TEST_F(TensorTest, ReshapeSizeMismatch) {
-    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F});
+    const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F});
 
-    EXPECT_THROW(t.reshape(Shape({2, 3})), std::invalid_argument);
+    EXPECT_THROW(kT.reshape(Shape({2, 3})), std::invalid_argument);
 }
 
 TEST_F(TensorTest, ViewContiguous) {
-    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
-    EXPECT_TRUE(t.is_contiguous());
+    const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
+    EXPECT_TRUE(kT.is_contiguous());
 
-    auto viewed = t.view(Shape({3, 2}));
+    auto viewed = kT.view(Shape({3, 2}));
 
     EXPECT_EQ(viewed.shape(), Shape({3, 2}));
     EXPECT_FLOAT_EQ((viewed[{0, 0}]), 1.0F);
@@ -167,7 +167,7 @@ TEST_F(TensorTest, ViewContiguous) {
 
     // Modifying view should affect original
     viewed[{0, 0}] = 100.0F;
-    EXPECT_FLOAT_EQ((t[{0}]), 100.0F);
+    EXPECT_FLOAT_EQ((kT[{0}]), 100.0F);
 }
 
 TEST_F(TensorTest, ViewNonContiguous) {
@@ -282,11 +282,11 @@ TEST_F(TensorTest, SlicingZeroCopy) {
 }
 
 TEST_F(TensorTest, SlicingOutOfBounds) {
-    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F, 5.0F});
+    const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F, 5.0F});
 
-    EXPECT_THROW(t.slice(1, 0, 2), std::out_of_range);   // Dimension out of range
-    EXPECT_THROW(t.slice(0, 3, 2), std::out_of_range);   // start >= end
-    EXPECT_THROW(t.slice(0, 0, 10), std::out_of_range);  // end > size
+    EXPECT_THROW(kT.slice(1, 0, 2), std::out_of_range);   // Dimension out of range
+    EXPECT_THROW(kT.slice(0, 3, 2), std::out_of_range);   // start >= end
+    EXPECT_THROW(kT.slice(0, 0, 10), std::out_of_range);  // end > size
 }
 
 // ========================================
@@ -336,11 +336,11 @@ TEST_F(TensorTest, SliceZeroCopyVerification) {
 
 TEST_F(TensorTest, ContiguousCheck) {
     // Newly created tensor is contiguous
-    const Tensor<float> t1({1.0F, 2.0F, 3.0F, 4.0F});
-    EXPECT_TRUE(t1.is_contiguous());
+    const Tensor<float> kT1({1.0F, 2.0F, 3.0F, 4.0F});
+    EXPECT_TRUE(kT1.is_contiguous());
 
     // View is contiguous
-    auto viewed = t1.view(Shape({2, 2}));
+    auto viewed = kT1.view(Shape({2, 2}));
     EXPECT_TRUE(viewed.is_contiguous());
 
     // Transposed tensor is not contiguous
@@ -373,10 +373,10 @@ TEST_F(TensorTest, ContiguousOperation) {
 }
 
 TEST_F(TensorTest, ContiguousAlreadyContiguous) {
-    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F});
-    EXPECT_TRUE(t.is_contiguous());
+    const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F});
+    EXPECT_TRUE(kT.is_contiguous());
 
-    auto contiguous = t.contiguous();
+    auto contiguous = kT.contiguous();
 
     // Should return a copy
     EXPECT_TRUE(contiguous.is_contiguous());
@@ -420,10 +420,10 @@ TEST_F(TensorTest, FactoryRandn) {
     EXPECT_EQ(t.size(), 100);
 
     // Check that values are not all the same (probabilistic test)
-    const float first_value = t[{0}];
+    const float kFirstValue = t[{0}];
     bool has_different_value = false;
     for (size_t i = 1; i < 100; ++i) {
-        if (std::abs(t[{i}] - first_value) > 0.001F) {
+        if (std::abs(t[{i}] - kFirstValue) > 0.001F) {
             has_different_value = true;
             break;
         }
