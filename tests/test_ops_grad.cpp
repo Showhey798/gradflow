@@ -98,9 +98,6 @@ TEST_F(OpsGradTest, AddNumericalGradient) {
 
     auto op = std::make_shared<AddOperation<float>>();
 
-    // Perform forward and backward
-    auto output = op->forward({x, y});
-
     // Check numerical gradient
     bool passed = ops::test::checkNumericalGradient(*op, {x, y});
     EXPECT_TRUE(passed);

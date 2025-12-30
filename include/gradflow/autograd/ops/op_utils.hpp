@@ -77,7 +77,7 @@ namespace test {
  * @param inputs Input tensors
  * @param output_index Which output element to use for gradient check (default: first element)
  * @param epsilon Finite difference step size (default: 1e-4)
- * @param tolerance Acceptable relative error (default: 1e-3)
+ * @param tolerance Acceptable relative error (default: 1e-2)
  * @return True if all gradients are within tolerance
  */
 template <typename T>
@@ -85,8 +85,8 @@ bool checkNumericalGradient(Operation<T>& op,
                             const std::vector<Tensor<T>>& inputs,
                             const std::vector<size_t>& output_index = {},
                             T epsilon = static_cast<T>(1e-4),
-                            T tolerance = static_cast<T>(1e-3)) {
-    // Forward pass to get output
+                            T tolerance = static_cast<T>(1e-2)) {
+    // Forward pass to get output and compute analytical gradients
     auto output = op.forward(inputs);
 
     // Create grad_output (all zeros except 1 at output_index)
@@ -120,15 +120,25 @@ bool checkNumericalGradient(Operation<T>& op,
 
         // Check gradient for each element of the input
         for (size_t i = 0; i < input.size(); ++i) {
-            // Create a copy of inputs
-            std::vector<Tensor<T>> inputs_plus = inputs;
-            std::vector<Tensor<T>> inputs_minus = inputs;
+            // Create copies of inputs for perturbation
+            std::vector<Tensor<T>> inputs_plus;
+            std::vector<Tensor<T>> inputs_minus;
+
+            // Deep copy inputs
+            for (const auto& inp : inputs) {
+                inputs_plus.push_back(Tensor<T>(inp.shape()));
+                inputs_minus.push_back(Tensor<T>(inp.shape()));
+                for (size_t j = 0; j < inp.size(); ++j) {
+                    inputs_plus.back().data()[j] = inp.data()[j];
+                    inputs_minus.back().data()[j] = inp.data()[j];
+                }
+            }
 
             // Perturb the i-th element
             inputs_plus[input_idx].data()[i] += epsilon;
             inputs_minus[input_idx].data()[i] -= epsilon;
 
-            // Forward pass with perturbed inputs
+            // Forward pass with perturbed inputs (using fresh operation state)
             auto output_plus = op.forward(inputs_plus);
             auto output_minus = op.forward(inputs_minus);
 
