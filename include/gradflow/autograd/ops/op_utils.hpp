@@ -8,8 +8,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace gradflow {
-namespace ops {
+namespace gradflow::ops {
 
 /**
  * @brief Adjust gradient for broadcasting
@@ -174,5 +173,4 @@ bool checkNumericalGradient(Operation<T>& op,
 }
 
 }  // namespace test
-}  // namespace ops
-}  // namespace gradflow
+}  // namespace gradflow::ops

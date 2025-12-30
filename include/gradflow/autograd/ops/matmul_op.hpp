@@ -52,12 +52,12 @@ public:
         auto y = this->getSavedTensor("y");
 
         // grad_x = grad_output @ y^T
-        auto y_T = y.transpose(0, 1);
-        auto grad_x = matmul(grad_output, y_T);
+        auto y_t = y.transpose(0, 1);
+        auto grad_x = matmul(grad_output, y_t);
 
         // grad_y = x^T @ grad_output
-        auto x_T = x.transpose(0, 1);
-        auto grad_y = matmul(x_T, grad_output);
+        auto x_t = x.transpose(0, 1);
+        auto grad_y = matmul(x_t, grad_output);
 
         return {grad_x, grad_y};
     }
