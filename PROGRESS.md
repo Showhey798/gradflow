@@ -26,55 +26,61 @@
 
 ### 進行中
 - ✅ 2.2 Variable クラス (Week 1-2)
-  - Issue #8: 完了（PR #59: レビュー待ち）
+  - Issue #8: 完了（PR #59: ユーザーレビュー待ち）
   - ステータス: AI レビュー完了、ユーザーレビュー待ち
   - すべてのテスト pass、ほぼすべての CI チェック pass
 
+- 🚧 2.3 基本演算の Operation 実装 (Week 2-4)
+  - Issue #9: 実装完了（PR #60: CI 実行中）
+  - ステータス: forward/backward テスト pass、AI レビュー待ち
+  - 9 つの Operation クラス実装完了
+
 ### 未着手
-- ⏳ 2.3 基本演算の Operation 実装 (Week 2-4)
 - ⏳ 2.4 活性化関数 (Week 4-5)
 - ⏳ 2.5 損失関数 (Week 5)
 - ⏳ 2.6 Optimizer (Week 5-6)
 
-## 現在のタスク: Issue #8 - Variable クラスの実装
+## 現在のタスク: Issue #9 - 基本演算の Operation 実装
 
 ### タスク詳細
-**目的**: Tensor をラップして自動微分を可能にする Variable クラスの実装
+**目的**: 自動微分機能を実現するため、基本的な演算の Operation クラスを実装
 
 **実装項目**:
-- `Variable<T>` クラス
-- Tensor のラッパー
-- 勾配の保持 (grad_)
-- 計算グラフへの参照 (grad_fn_)
-- `backward()` の実装
-- 勾配の蓄積機能
+- Binary Operations: AddOperation, SubOperation, MulOperation, DivOperation, PowOperation
+- Unary Operations: ExpOperation, LogOperation, SqrtOperation
+- Matrix Operations: MatMulOperation
+- Broadcasting 対応の勾配計算（sumToShape ユーティリティ）
+- 包括的なテストスイート
 
 **ファイル**:
-- `include/gradflow/autograd/variable.hpp`
-- `tests/test_variable.cpp`
+- `include/gradflow/autograd/ops/op_utils.hpp` (ユーティリティ)
+- `include/gradflow/autograd/ops/{add,sub,mul,div,pow,exp,log,sqrt,matmul_op}.hpp`
+- `tests/test_ops_grad.cpp`
+- `docs/ISSUE_9_DESIGN.md` (設計ドキュメント)
 
 **テスト項目**:
-- VariableTest::Construction
-- VariableTest::GradAccumulation
-- VariableTest::BackwardSimple
+- 各演算の forward テスト: ✅ 13/13 PASS
+- 各演算の backward テスト: ✅ 13/13 PASS
+- Broadcasting テスト: ✅ PASS
+- 数値勾配チェック: ⚠️ WIP (テスト実装の改善が必要)
 
 **完了基準**:
-- Variable が Tensor をラップして動作
-- 勾配が正しく蓄積される
-- すべてのテストが pass
-- すべての CI チェックが pass
+- すべての Operation クラスが実装されている: ✅
+- forward と backward が正しく動作: ✅
+- Broadcasting 対応: ✅
+- すべての CI チェックが pass: 🔄 進行中
 
 ### ワークフロー進捗
 1. ✅ **[設計]**: ml-lib-architect - 設計図とタスクリスト作成完了
-2. ✅ **[実装]**: github-issue-implementer - PR #59 作成完了
-3. ✅ **[自動検証]**: CI チェック - ほぼすべて pass
-4. ✅ **[AI レビュー]**: ml-code-reviewer - レビュー完了（承認）
-5. 🔄 **[納品]**: ユーザーへ最終レビューとマージ依頼
+2. ✅ **[実装]**: github-issue-implementer - PR #60 作成完了
+3. 🔄 **[自動検証]**: CI チェック - 実行中
+4. ⏳ **[AI レビュー]**: ml-code-reviewer - 待機中
+5. ⏳ **[納品]**: ユーザーへ最終レビューとマージ依頼
 
 ### 依存関係
-- ✅ Issue #7 (Operation base class) - 完了
-- ✅ Tensor クラス - 完了
-- ✅ Shape/Storage クラス - 完了
+- ✅ Issue #7 (Operation base class) - 完了（PR #57）
+- ✅ Issue #8 (Variable class) - 完了（PR #59: レビュー待ち）
+- ✅ 既存の Tensor レベルの演算 - 完了
 
 ## AI レビュー結果
 
@@ -106,9 +112,10 @@
 **AI としては承認可能な品質**に達しています。ユーザーの最終レビューとマージ判断をお待ちしています。
 
 ## 次のステップ
-1. ✅ Variable クラスの実装完了
-2. 🔄 **ユーザーによる最終レビューとマージ** ← 現在ここ
-3. ⏭️ Phase 2.3: 基本演算の Operation 実装（Add, Mul, MatMul, etc.）
+1. ✅ Variable クラスの実装完了（PR #59: ユーザーレビュー待ち）
+2. 🚧 **基本演算の Operation 実装** ← 現在ここ（PR #60: CI & レビュー待ち）
+3. ⏭️ Phase 2.4: 活性化関数の実装
+4. ⏭️ Phase 2.5: 損失関数の実装
 
 ## リスクと課題
 現在の課題: なし（すべて順調）
