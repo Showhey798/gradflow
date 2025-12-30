@@ -21,6 +21,8 @@ repos:
         args: [--fix=lf]
 
   # C++ formatting with clang-format
+  # Note: CI uses clang-format-15, but pre-commit mirrors may use different version
+  # For exact CI parity, install clang-format-15 locally and use the local hook below
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v18.1.8
     hooks:
@@ -48,12 +50,14 @@ repos:
   #     - id: pyright
   #       additional_dependencies: [numpy]
 
-  # CMake formatting (optional)
-  # - repo: https://github.com/cheshirekow/cmake-format-precommit
-  #   rev: v0.6.13
-  #   hooks:
-  #     - id: cmake-format
-  #     - id: cmake-lint
+  # CMake formatting
+  - repo: https://github.com/cheshirekow/cmake-format-precommit
+    rev: v0.6.13
+    hooks:
+      - id: cmake-format
+        args: [-i]
+      # cmake-lint can be too strict, enable only if needed
+      # - id: cmake-lint
 
   # Markdown linting (optional)
   # - repo: https://github.com/igorshubovych/markdownlint-cli
@@ -65,21 +69,28 @@ repos:
 # Local hooks using project scripts
   - repo: local
     hooks:
-      # Custom C++ format check (using project script)
+      # C++ format check (runs CI format validation)
       - id: cpp-format-check
-        name: C++ Format Check
-        entry: scripts/ci-format-check.sh
-        language: script
+        name: C++ Format Check (CI validation)
+        entry: bash scripts/ci-format-check.sh
+        language: system
         types_or: [c++, c]
         pass_filenames: false
-        # Only run on C++ file changes
         files: \.(cpp|hpp|h)$
+
+      # CMake format check (runs CI format validation)
+      - id: cmake-format-check
+        name: CMake Format Check (CI validation)
+        entry: bash scripts/ci-format-cmake.sh
+        language: system
+        pass_filenames: false
+        files: CMakeLists\.txt|\.cmake$
 
       # C++ Build and Test (pre-push only)
       - id: cpp-build-test
         name: C++ Build & Test
-        entry: scripts/ci-test-cpp.sh
-        language: script
+        entry: bash scripts/ci-test-cpp.sh
+        language: system
         pass_filenames: false
         stages: [pre-push]
         files: \.(cpp|hpp|h|cmake|txt)$
@@ -88,8 +99,8 @@ repos:
       # Python Lint and Type Check (pre-push only)
       - id: python-quality
         name: Python Quality Checks
-        entry: scripts/ci-lint-python.sh
-        language: script
+        entry: bash scripts/ci-lint-python.sh
+        language: system
         pass_filenames: false
         stages: [pre-push]
         files: \.py$
