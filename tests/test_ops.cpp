@@ -2,9 +2,9 @@
 #include "gradflow/autograd/ops/matmul.hpp"
 #include "gradflow/autograd/ops/reduction.hpp"
 
-#include <gtest/gtest.h>
-
 #include <cmath>
+
+#include <gtest/gtest.h>
 
 using namespace gradflow;
 
@@ -14,9 +14,7 @@ protected:
     void TearDown() override {}
 
     // Helper function to check if two floats are approximately equal
-    bool approx_equal(float a, float b, float epsilon = 1e-5f) {
-        return std::abs(a - b) < epsilon;
-    }
+    bool approx_equal(float a, float b, float epsilon = 1e-5f) { return std::abs(a - b) < epsilon; }
 };
 
 // ========================================
@@ -114,7 +112,7 @@ TEST_F(OpsTest, AddBroadcastScalarTo1D) {
 
 TEST_F(OpsTest, AddBroadcast1DTo2D) {
     Tensor<float> a({{1.0f, 2.0f, 3.0f}, {4.0f, 5.0f, 6.0f}});  // [2, 3]
-    Tensor<float> b({10.0f, 20.0f, 30.0f});                      // [3]
+    Tensor<float> b({10.0f, 20.0f, 30.0f});                     // [3]
 
     auto c = add(a, b);
 
@@ -158,7 +156,7 @@ TEST_F(OpsTest, MatMulBasic) {
 }
 
 TEST_F(OpsTest, MatMulRectangular) {
-    Tensor<float> a({{1.0f, 2.0f, 3.0f}, {4.0f, 5.0f, 6.0f}});  // [2, 3]
+    Tensor<float> a({{1.0f, 2.0f, 3.0f}, {4.0f, 5.0f, 6.0f}});       // [2, 3]
     Tensor<float> b({{7.0f, 8.0f}, {9.0f, 10.0f}, {11.0f, 12.0f}});  // [3, 2]
 
     auto c = matmul(a, b);  // [2, 2]
@@ -173,7 +171,7 @@ TEST_F(OpsTest, MatMulRectangular) {
 }
 
 TEST_F(OpsTest, MatMulIncompatibleShapes) {
-    Tensor<float> a({{1.0f, 2.0f}, {3.0f, 4.0f}});  // [2, 2]
+    Tensor<float> a({{1.0f, 2.0f}, {3.0f, 4.0f}});                 // [2, 2]
     Tensor<float> b({{5.0f, 6.0f}, {7.0f, 8.0f}, {9.0f, 10.0f}});  // [3, 2]
 
     EXPECT_THROW(matmul(a, b), std::invalid_argument);
@@ -198,9 +196,9 @@ TEST_F(OpsTest, SumAlongAxis) {
     // Sum along axis 0 (reduce rows)
     auto result0 = sum(a, 0);
     EXPECT_EQ(result0.shape(), Shape({3}));
-    EXPECT_FLOAT_EQ(result0[{0}], 5.0f);   // 1 + 4
-    EXPECT_FLOAT_EQ(result0[{1}], 7.0f);   // 2 + 5
-    EXPECT_FLOAT_EQ(result0[{2}], 9.0f);   // 3 + 6
+    EXPECT_FLOAT_EQ(result0[{0}], 5.0f);  // 1 + 4
+    EXPECT_FLOAT_EQ(result0[{1}], 7.0f);  // 2 + 5
+    EXPECT_FLOAT_EQ(result0[{2}], 9.0f);  // 3 + 6
 
     // Sum along axis 1 (reduce columns)
     auto result1 = sum(a, 1);

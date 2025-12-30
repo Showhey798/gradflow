@@ -38,8 +38,8 @@ inline Shape broadcast_shapes(const Shape& shape1, const Shape& shape2) {
  * @return Corresponding indices in the input tensor
  */
 inline std::vector<size_t> get_broadcast_indices(const std::vector<size_t>& output_indices,
-                                                  const Shape& input_shape,
-                                                  const Shape& output_shape) {
+                                                 const Shape& input_shape,
+                                                 const Shape& output_shape) {
     size_t input_ndim = input_shape.ndim();
     size_t output_ndim = output_shape.ndim();
     std::vector<size_t> input_indices(input_ndim);

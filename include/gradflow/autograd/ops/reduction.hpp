@@ -22,9 +22,8 @@ Tensor<T> sum(const Tensor<T>& a) {
     Tensor<T> result(Shape({}));  // Scalar
     T sum_value = T(0);
 
-    detail::iterate_indices(a.shape(), [&](const std::vector<size_t>& indices) {
-        sum_value += a[indices];
-    });
+    detail::iterate_indices(a.shape(),
+                            [&](const std::vector<size_t>& indices) { sum_value += a[indices]; });
 
     result[{}] = sum_value;
     return result;
@@ -57,9 +56,8 @@ Tensor<T> sum(const Tensor<T>& a, size_t axis) {
     Tensor<T> result(result_shape);
 
     // Initialize result to zero
-    detail::iterate_indices(result_shape, [&](const std::vector<size_t>& indices) {
-        result[indices] = T(0);
-    });
+    detail::iterate_indices(result_shape,
+                            [&](const std::vector<size_t>& indices) { result[indices] = T(0); });
 
     // Sum over the specified axis
     detail::iterate_indices(a.shape(), [&](const std::vector<size_t>& a_indices) {
@@ -108,9 +106,8 @@ Tensor<T> mean(const Tensor<T>& a, size_t axis) {
     Tensor<T> result = sum(a, axis);
     T divisor = static_cast<T>(a.shape()[axis]);
 
-    detail::iterate_indices(result.shape(), [&](const std::vector<size_t>& indices) {
-        result[indices] /= divisor;
-    });
+    detail::iterate_indices(
+        result.shape(), [&](const std::vector<size_t>& indices) { result[indices] /= divisor; });
 
     return result;
 }

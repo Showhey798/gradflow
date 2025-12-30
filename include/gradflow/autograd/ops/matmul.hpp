@@ -25,15 +25,14 @@ Tensor<T> matmul(const Tensor<T>& a, const Tensor<T>& b) {
         throw std::invalid_argument("matmul requires 2D tensors");
     }
 
-    size_t M = a.shape()[0];  // rows of a
-    size_t K = a.shape()[1];  // cols of a = rows of b
+    size_t M = a.shape()[0];    // rows of a
+    size_t K = a.shape()[1];    // cols of a = rows of b
     size_t K_b = b.shape()[0];  // rows of b
-    size_t N = b.shape()[1];  // cols of b
+    size_t N = b.shape()[1];    // cols of b
 
     // Check that inner dimensions match
     if (K != K_b) {
-        throw std::invalid_argument(
-            "matmul requires matching inner dimensions: a[M, K] @ b[K, N]");
+        throw std::invalid_argument("matmul requires matching inner dimensions: a[M, K] @ b[K, N]");
     }
 
     // Create result tensor [M, N]
