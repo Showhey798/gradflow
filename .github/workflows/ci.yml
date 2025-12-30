@@ -70,10 +70,21 @@ jobs:
 
       - name: Run clang-tidy
         run: |
-          # Skip clang-tidy for now - compilation database path needs investigation
-          echo "Skipping clang-tidy (will be re-enabled once build paths are confirmed)"
-          # find src tests -name '*.cpp' | \
-          #   xargs clang-tidy -p build/Release
+          # Find C++ source files in src and tests directories
+          FILES=$(find src tests -name '*.cpp' 2>/dev/null || true)
+          if [ -n "$FILES" ]; then
+            # Find the compile_commands.json in the build directory
+            COMPILE_COMMANDS=$(find build -name compile_commands.json | head -n 1)
+            if [ -z "$COMPILE_COMMANDS" ]; then
+              echo "compile_commands.json not found, skipping clang-tidy"
+              exit 0
+            fi
+            echo "Using compilation database: $COMPILE_COMMANDS"
+            echo "$FILES" | xargs clang-tidy -p "$(dirname $COMPILE_COMMANDS)" \
+              --config-file=.clang-tidy
+          else
+            echo "No C++ source files found, skipping clang-tidy check"
+          fi
 
   # ============================================
   # Multi-Platform Build and Test
@@ -238,20 +249,19 @@ jobs:
 
       - name: Generate coverage report
         run: |
-          # Skip coverage report generation for now - gcov data format issues
-          echo "Skipping coverage report (will be re-enabled once gcov issues are resolved)"
-          # lcov --directory . --capture --output-file coverage.info
-          # lcov --remove coverage.info '/usr/*' '*/tests/*' '*/examples/*' --output-file coverage.info
-          # lcov --list coverage.info
+          # Generate coverage report with lcov
+          lcov --directory . --capture --output-file coverage.info --ignore-errors mismatch
+          lcov --remove coverage.info '/usr/*' '*/tests/*' '*/examples/*' '*/build/*' --output-file coverage.info
+          lcov --list coverage.info
 
-      # Temporarily disabled until coverage generation is fixed
-      # - name: Upload coverage to Codecov
-      #   uses: codecov/codecov-action@v4
-      #   with:
-      #     files: ./coverage.info
-      #     flags: unittests
-      #     name: codecov-umbrella
-      #     fail_ci_if_error: false
+      - name: Upload coverage to Codecov
+        if: success()
+        uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4
+        with:
+          files: ./coverage.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
 
   # ============================================
   # Sanitizers
@@ -332,5 +342,16 @@ jobs:
 
       - name: Build documentation
         run: |
-          # TODO: Add Doxygen configuration
-          echo "Documentation build placeholder"
+          # Check if Doxygen configuration exists
+          if [ -f "Doxyfile" ] || [ -f "docs/Doxyfile" ]; then
+            # Build documentation with Doxygen
+            if [ -f "Doxyfile" ]; then
+              doxygen Doxyfile
+            else
+              cd docs && doxygen Doxyfile
+            fi
+            echo "Documentation built successfully"
+          else
+            echo "Doxyfile not found. Skipping documentation build."
+            echo "To enable documentation, add a Doxyfile to the repository root or docs/ directory."
+          fi

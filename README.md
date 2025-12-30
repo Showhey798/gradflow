@@ -139,11 +139,32 @@ cmake -B build -DGRADFLOW_BUILD_PYTHON=ON -DGRADFLOW_BUILD_METAL=ON
 
 ## Development
 
+### CI Verification (Recommended)
+
+Run all CI checks locally before pushing:
+
+```bash
+# Make scripts executable (first time only)
+chmod +x scripts/*.sh
+
+# Run all CI checks (format, lint, tests)
+bash scripts/ci-verify.sh
+
+# Or run individual checks:
+bash scripts/ci-format-check.sh    # C++ format check
+bash scripts/ci-lint-python.sh     # Python linting
+bash scripts/ci-test-cpp.sh        # C++ tests
+bash scripts/ci-test-python.sh     # Python tests
+```
+
 ### Code Formatting
 
 ```bash
 # Format all source files
 find include src tests -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i
+
+# Or use the script
+bash scripts/ci-format-apply.sh
 ```
 
 ### Static Analysis
@@ -161,6 +182,9 @@ cmake --build build --target check
 
 # Run specific test
 ./build/tests/tensor_test
+
+# Run Python tests (if bindings are built)
+pytest python/tests -v
 ```
 
 ### Code Coverage
