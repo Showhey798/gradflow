@@ -280,4 +280,41 @@ Tensor<T> pow(const Tensor<T>& a, T exponent) {
     return result;
 }
 
+/**
+ * @brief Element-wise hyperbolic tangent
+ *
+ * @tparam T Element type
+ * @param a Input tensor
+ * @return Result tensor with tanh applied element-wise
+ */
+template <typename T>
+Tensor<T> tanh(const Tensor<T>& a) {
+    Tensor<T> result(a.shape());
+
+    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
+        result[indices] = std::tanh(a[indices]);
+    });
+
+    return result;
+}
+
+/**
+ * @brief Element-wise maximum with scalar
+ *
+ * @tparam T Element type
+ * @param a Input tensor
+ * @param scalar Scalar value
+ * @return Result tensor with max(a[i], scalar) applied element-wise
+ */
+template <typename T>
+Tensor<T> max(const Tensor<T>& a, T scalar) {
+    Tensor<T> result(a.shape());
+
+    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
+        result[indices] = std::max(a[indices], scalar);
+    });
+
+    return result;
+}
+
 }  // namespace gradflow

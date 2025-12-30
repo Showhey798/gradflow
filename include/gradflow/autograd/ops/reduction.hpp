@@ -35,19 +35,24 @@ Tensor<T> sum(const Tensor<T>& a) {
  * @tparam T Element type
  * @param a Input tensor
  * @param axis Axis to reduce (0 to ndim-1)
+ * @param keepdim If true, keep the reduced dimension with size 1
  * @return Tensor with reduced dimension
  * @throws std::out_of_range if axis is out of bounds
  */
 template <typename T>
-Tensor<T> sum(const Tensor<T>& a, size_t axis) {
+Tensor<T> sum(const Tensor<T>& a, size_t axis, bool keepdim = false) {
     if (axis >= a.ndim()) {
         throw std::out_of_range("Axis out of range");
     }
 
-    // Compute output shape (remove the reduced axis)
+    // Compute output shape (remove the reduced axis or set to 1)
     std::vector<size_t> result_dims;
     for (size_t i = 0; i < a.ndim(); ++i) {
-        if (i != axis) {
+        if (i == axis) {
+            if (keepdim) {
+                result_dims.push_back(1);
+            }
+        } else {
             result_dims.push_back(a.shape()[i]);
         }
     }
@@ -61,10 +66,14 @@ Tensor<T> sum(const Tensor<T>& a, size_t axis) {
 
     // Sum over the specified axis
     detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& a_indices) {
-        // Create result indices by removing the axis dimension
+        // Create result indices by removing or keeping the axis dimension
         std::vector<size_t> result_indices;
         for (size_t i = 0; i < a.ndim(); ++i) {
-            if (i != axis) {
+            if (i == axis) {
+                if (keepdim) {
+                    result_indices.push_back(0);
+                }
+            } else {
                 result_indices.push_back(a_indices[i]);
             }
         }
@@ -142,11 +151,12 @@ Tensor<T> max(const Tensor<T>& a) {
  * @tparam T Element type
  * @param a Input tensor
  * @param axis Axis to reduce
+ * @param keepdim If true, keep the reduced dimension with size 1
  * @return Tensor with reduced dimension containing maximum values
  * @throws std::out_of_range if axis is out of bounds
  */
 template <typename T>
-Tensor<T> max(const Tensor<T>& a, size_t axis) {
+Tensor<T> max(const Tensor<T>& a, size_t axis, bool keepdim = false) {
     if (axis >= a.ndim()) {
         throw std::out_of_range("Axis out of range");
     }
@@ -154,7 +164,11 @@ Tensor<T> max(const Tensor<T>& a, size_t axis) {
     // Compute output shape
     std::vector<size_t> result_dims;
     for (size_t i = 0; i < a.ndim(); ++i) {
-        if (i != axis) {
+        if (i == axis) {
+            if (keepdim) {
+                result_dims.push_back(1);
+            }
+        } else {
             result_dims.push_back(a.shape()[i]);
         }
     }
@@ -171,7 +185,11 @@ Tensor<T> max(const Tensor<T>& a, size_t axis) {
     detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& a_indices) {
         std::vector<size_t> result_indices;
         for (size_t i = 0; i < a.ndim(); ++i) {
-            if (i != axis) {
+            if (i == axis) {
+                if (keepdim) {
+                    result_indices.push_back(0);
+                }
+            } else {
                 result_indices.push_back(a_indices[i]);
             }
         }
