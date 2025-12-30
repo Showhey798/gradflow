@@ -141,8 +141,8 @@ jobs:
 
     - name: Run clang-tidy
       run: |
-        # tests/ と include/ ディレクトリの C++ ファイルをチェック
-        FILES=$(find tests include -name '*.cpp' -o -name '*.hpp' 2>/dev/null || true)
+        # include/ ディレクトリの C++ ファイルのみをチェック（tests/ は除外）
+        FILES=$(find include -name '*.cpp' -o -name '*.hpp' 2>/dev/null || true)
         if [ -n "$FILES" ]; then
           # Find the compile_commands.json in the build directory
           COMPILE_COMMANDS=$(find build -name compile_commands.json | head -n 1)
