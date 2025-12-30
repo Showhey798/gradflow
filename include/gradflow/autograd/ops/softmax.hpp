@@ -72,7 +72,6 @@ public:
 
         // Save output for backward
         this->saveForBackward("output", result);
-        this->saveForBackward("dim", Tensor<T>(Shape({})));  // Placeholder for dim
 
         return result;
     }

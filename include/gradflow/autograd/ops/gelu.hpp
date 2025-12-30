@@ -51,36 +51,19 @@ public:
         constexpr T kCoeff = static_cast<T>(0.044715);
 
         // Compute: 0.5 * x * (1 + tanh(√(2/π) * (x + 0.044715 * x³)))
-        Tensor<T> x_cubed(x.shape());
+        // Optimize by reducing intermediate tensor allocations
+        Tensor<T> scaled_inner(x.shape());
         for (size_t i = 0; i < x.size(); ++i) {
-            x_cubed.data()[i] = x.data()[i] * x.data()[i] * x.data()[i];
-        }
-
-        Tensor<T> coeff_x_cubed(x_cubed.shape());
-        for (size_t i = 0; i < x_cubed.size(); ++i) {
-            coeff_x_cubed.data()[i] = kCoeff * x_cubed.data()[i];
-        }
-
-        Tensor<T> inner(x.shape());
-        for (size_t i = 0; i < x.size(); ++i) {
-            inner.data()[i] = x.data()[i] + coeff_x_cubed.data()[i];
-        }
-
-        Tensor<T> scaled_inner(inner.shape());
-        for (size_t i = 0; i < inner.size(); ++i) {
-            scaled_inner.data()[i] = kSqrt2OverPi * inner.data()[i];
+            const T x_val = x.data()[i];
+            const T x_cubed = x_val * x_val * x_val;
+            scaled_inner.data()[i] = kSqrt2OverPi * (x_val + kCoeff * x_cubed);
         }
 
         auto tanh_value = tanh(scaled_inner);
 
-        Tensor<T> one_plus_tanh(tanh_value.shape());
-        for (size_t i = 0; i < tanh_value.size(); ++i) {
-            one_plus_tanh.data()[i] = T(1) + tanh_value.data()[i];
-        }
-
         Tensor<T> result(x.shape());
         for (size_t i = 0; i < x.size(); ++i) {
-            result.data()[i] = T(0.5) * x.data()[i] * one_plus_tanh.data()[i];
+            result.data()[i] = T(0.5) * x.data()[i] * (T(1) + tanh_value.data()[i]);
         }
 
         // Save for backward

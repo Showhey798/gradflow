@@ -40,20 +40,10 @@ public:
         const auto& x = inputs[0];
 
         // y = 1 / (1 + exp(-x))
-        Tensor<T> neg_x(x.shape());
+        // Compute directly in a single loop for efficiency
+        Tensor<T> result(x.shape());
         for (size_t i = 0; i < x.size(); ++i) {
-            neg_x.data()[i] = -x.data()[i];
-        }
-        auto exp_neg_x = exp(neg_x);
-
-        Tensor<T> one_plus_exp(exp_neg_x.shape());
-        for (size_t i = 0; i < exp_neg_x.size(); ++i) {
-            one_plus_exp.data()[i] = T(1) + exp_neg_x.data()[i];
-        }
-
-        Tensor<T> result(one_plus_exp.shape());
-        for (size_t i = 0; i < one_plus_exp.size(); ++i) {
-            result.data()[i] = T(1) / one_plus_exp.data()[i];
+            result.data()[i] = T(1) / (T(1) + std::exp(-x.data()[i]));
         }
 
         // Save output for backward (more efficient than recomputing)

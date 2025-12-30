@@ -47,7 +47,11 @@ public:
         const auto& x = inputs[0];
 
         // y = max(0, x)
-        auto result = max(x, static_cast<T>(0));
+        // Implement directly for consistency with LeakyReLU
+        Tensor<T> result(x.shape());
+        for (size_t i = 0; i < x.size(); ++i) {
+            result.data()[i] = x.data()[i] > T(0) ? x.data()[i] : T(0);
+        }
 
         // Save input for backward
         this->saveForBackward("input", x);
