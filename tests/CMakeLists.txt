@@ -74,6 +74,10 @@ fullscratch_add_test(ops_test SOURCES test_ops.cpp)
 # Device tests
 fullscratch_add_test(device_test SOURCES test_device.cpp)
 
+# Phase 1 integration tests
+fullscratch_add_test(phase1_integration_test SOURCES
+                     test_phase1_integration.cpp)
+
 # TODO: Implement these tests # Matrix operations tests
 # fullscratch_add_test(matrix_test SOURCES test_matrix.cpp )
 #
@@ -95,7 +99,8 @@ fullscratch_add_test(device_test SOURCES test_device.cpp)
 # Integration Tests
 # ========================================
 
-# TODO: Implement integration tests fullscratch_add_test(integration_test
+# Phase 1 integration tests are defined above with core tests TODO: Implement
+# additional integration tests as needed fullscratch_add_test(integration_test
 # SOURCES test_integration.cpp )
 
 # ========================================
@@ -112,7 +117,8 @@ add_custom_target(
           optimizer_test
           ops_test
           device_test
+          phase1_integration_test
           # matrix_test vector_test activation_test loss_test
-          # neural_network_test data_loader_test integration_test
+          # neural_network_test data_loader_test
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   COMMENT "Running all tests with verbose output")

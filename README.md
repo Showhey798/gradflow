@@ -203,6 +203,60 @@ lcov --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info
 genhtml coverage.info --output-directory coverage_report
 ```
 
+### Memory Leak Detection (AddressSanitizer)
+
+AddressSanitizer (ASan) is used to detect memory leaks, buffer overflows, and other memory-related bugs:
+
+```bash
+# Configure with sanitizers enabled
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DGRADFLOW_ENABLE_SANITIZERS=ON
+
+# Build and run tests
+cmake --build build
+ctest --test-dir build
+
+# Run specific test with sanitizers
+./build/tests/phase1_integration_test
+
+# Note: ASan will report any memory leaks or errors at program exit
+```
+
+**Sanitizer Options:**
+- `address`: Detects memory leaks, buffer overflows, use-after-free
+- `undefined`: Detects undefined behavior (division by zero, null pointer dereference, etc.)
+
+Both sanitizers are enabled by default when `GRADFLOW_ENABLE_SANITIZERS=ON`.
+
+### Performance Benchmarking
+
+Performance benchmarking for Phase 1 components:
+
+```bash
+# Build tests in Release mode for accurate performance measurements
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target phase1_integration_test
+
+# Run benchmarks
+time ./build/tests/phase1_integration_test --gtest_filter=*LargeScale*
+
+# Example output:
+# [----------] 1 test from Phase1IntegrationTest
+# [----------] Phase1IntegrationTest.LargeScaleOperations (XXX ms)
+```
+
+**Benchmark Tests:**
+- `Phase1IntegrationTest.LargeScaleOperations`: Tests matrix multiplication and reductions on large tensors (500×1000 and 1000×200)
+- `Phase1IntegrationTest.MemoryManagement`: Measures memory allocation/deallocation performance over 100 iterations
+
+**Performance Metrics:**
+- Execution time for large-scale operations
+- Memory footprint (monitor with Activity Monitor on macOS or `top` on Linux)
+- CPU utilization during computation
+
+For detailed performance analysis, use profiling tools:
+- **macOS**: Instruments (Xcode)
+- **Linux**: `perf`, `valgrind --tool=callgrind`
+
 ## Python Bindings
 
 ```bash
