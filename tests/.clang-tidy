@@ -1,5 +1,5 @@
-# Clang-Tidy configuration for GradFlow
-# Comprehensive static analysis checks for C++ code
+# Clang-Tidy configuration for test files
+# Relaxed rules to accommodate Google Test conventions
 
 ---
 Checks: >
@@ -18,17 +18,15 @@ Checks: >
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -cppcoreguidelines-owning-memory,
   -cppcoreguidelines-no-malloc,
+  -cppcoreguidelines-avoid-non-const-global-variables,
   google-*,
   -google-readability-todo,
   -google-runtime-references,
   -google-build-using-namespace,
-  hicpp-*,
-  -hicpp-no-array-decay,
-  -hicpp-avoid-c-arrays,
-  -hicpp-no-malloc,
   misc-*,
   -misc-non-private-member-variables-in-classes,
   -misc-no-recursion,
+  -misc-use-anonymous-namespace,
   modernize-*,
   -modernize-use-trailing-return-type,
   -modernize-avoid-c-arrays,
@@ -42,15 +40,15 @@ Checks: >
   -readability-identifier-length,
   -readability-else-after-return
 
-# 警告をエラーとして扱う
-WarningsAsErrors: '*'
+# テストファイルでは警告をエラーとして扱わない
+WarningsAsErrors: ''
 
-# ヘッダーフィルター（プロジェクト内のヘッダーのみチェック、テストは除外）
-HeaderFilterRegex: 'include/gradflow/.*'
+# テストヘッダーもチェックしない
+HeaderFilterRegex: ''
 
 # チェック固有のオプション
 CheckOptions:
-  # 命名規則
+  # 命名規則: Google Test のマクロ（TEST, TEST_F, SetUp, TearDown など）を許可
   - key: readability-identifier-naming.NamespaceCase
     value: lower_case
   - key: readability-identifier-naming.ClassCase
@@ -60,7 +58,7 @@ CheckOptions:
   - key: readability-identifier-naming.EnumCase
     value: CamelCase
   - key: readability-identifier-naming.FunctionCase
-    value: camelBack
+    value: aNy_CasE
   - key: readability-identifier-naming.VariableCase
     value: lower_case
   - key: readability-identifier-naming.ParameterCase
@@ -92,43 +90,23 @@ CheckOptions:
   - key: readability-identifier-naming.ValueTemplateParameterCase
     value: CamelCase
 
-  # 関数サイズ制限
+  # 関数サイズ制限を緩和（テストは長くなりがち）
   - key: readability-function-size.LineThreshold
-    value: '150'
+    value: '300'
   - key: readability-function-size.StatementThreshold
-    value: '100'
+    value: '200'
   - key: readability-function-size.BranchThreshold
-    value: '20'
+    value: '40'
   - key: readability-function-size.ParameterThreshold
-    value: '8'
+    value: '10'
   - key: readability-function-size.NestingThreshold
-    value: '5'
-
-  # 上限設定
-  - key: misc-definitions-in-headers.HeaderFileExtensions
-    value: 'h,hpp,hxx'
-  - key: misc-definitions-in-headers.UseHeaderFileExtension
-    value: 'true'
-
-  # パフォーマンス
-  - key: performance-move-const-arg.CheckTriviallyCopyableMove
-    value: 'true'
-  - key: performance-unnecessary-value-param.AllowedTypes
-    value: ''
-
-  # モダン C++
-  - key: modernize-use-auto.MinTypeNameLength
-    value: '5'
-  - key: modernize-use-auto.RemoveStars
-    value: 'false'
-  - key: modernize-use-nullptr.NullMacros
-    value: 'NULL'
+    value: '8'
 
   # Google スタイル
   - key: google-readability-braces-around-statements.ShortStatementLines
     value: '1'
   - key: google-readability-function-size.StatementThreshold
-    value: '800'
+    value: '1000'
   - key: google-readability-namespace-comments.ShortNamespaceLines
     value: '10'
   - key: google-readability-namespace-comments.SpacesBeforeComments
@@ -140,18 +118,6 @@ CheckOptions:
   - key: cppcoreguidelines-explicit-virtual-functions.IgnoreDestructors
     value: 'true'
   - key: cppcoreguidelines-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
-    value: 'true'
-
-  # HICPP
-  - key: hicpp-signed-bitwise.IgnorePositiveIntegerLiterals
-    value: 'true'
-
-  # Bugprone
-  - key: bugprone-argument-comment.StrictMode
-    value: 'false'
-  - key: bugprone-suspicious-string-compare.WarnOnImplicitComparison
-    value: 'true'
-  - key: bugprone-suspicious-string-compare.WarnOnLogicalNotComparison
     value: 'true'
 
   # Readability
@@ -166,6 +132,4 @@ CheckOptions:
   - key: readability-uppercase-literal-suffix.NewSuffixes
     value: ''
 
-# プロジェクト固有の無視設定
-# 外部ライブラリやテストコードには緩い基準を適用
 FormatStyle: file

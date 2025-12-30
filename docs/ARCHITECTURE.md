@@ -369,11 +369,11 @@ protected:
     // Forward pass で保存が必要な中間変数
     std::unordered_map<std::string, Tensor<T>> saved_tensors_;
 
-    void save_for_backward(const std::string& name, const Tensor<T>& tensor) {
+    void saveForBackward(const std::string& name, const Tensor<T>& tensor) {
         saved_tensors_[name] = tensor;
     }
 
-    Tensor<T> get_saved_tensor(const std::string& name) const {
+    Tensor<T> getSavedTensor(const std::string& name) const {
         return saved_tensors_.at(name);
     }
 };
@@ -706,15 +706,15 @@ public:
         }
 
         // Backward pass のために入力を保存
-        save_for_backward("a", a);
-        save_for_backward("b", b);
+        saveForBackward("a", a);
+        saveForBackward("b", b);
 
         return result;
     }
 
     std::vector<Tensor<T>> backward(const Tensor<T>& grad_output) override {
-        auto a = get_saved_tensor("a");
-        auto b = get_saved_tensor("b");
+        auto a = getSavedTensor("a");
+        auto b = getSavedTensor("b");
 
         // ∂L/∂A = ∂L/∂C @ B^T
         Tensor<T> grad_a = matmul(grad_output, b.transpose(-1, -2));
@@ -751,13 +751,13 @@ public:
         // softmax = exp(x) / sum(exp(x))
         auto result = exp_x / sum_exp;
 
-        save_for_backward("softmax", result);
+        saveForBackward("softmax", result);
 
         return result;
     }
 
     std::vector<Tensor<T>> backward(const Tensor<T>& grad_output) override {
-        auto softmax = get_saved_tensor("softmax");
+        auto softmax = getSavedTensor("softmax");
 
         // ∂softmax/∂x = softmax * (grad_output - (grad_output * softmax).sum(dim))
         auto sum_term = (grad_output * softmax).sum(dim_, /*keepdim=*/true);
@@ -803,17 +803,17 @@ public:
         auto result = gamma * x_normalized + beta;
 
         // Save for backward
-        save_for_backward("x_normalized", x_normalized);
-        save_for_backward("gamma", gamma);
-        save_for_backward("std", (variance + eps_).sqrt());
+        saveForBackward("x_normalized", x_normalized);
+        saveForBackward("gamma", gamma);
+        saveForBackward("std", (variance + eps_).sqrt());
 
         return result;
     }
 
     std::vector<Tensor<T>> backward(const Tensor<T>& grad_output) override {
-        auto x_normalized = get_saved_tensor("x_normalized");
-        auto gamma = get_saved_tensor("gamma");
-        auto std = get_saved_tensor("std");
+        auto x_normalized = getSavedTensor("x_normalized");
+        auto gamma = getSavedTensor("gamma");
+        auto std = getSavedTensor("std");
 
         // ∂L/∂gamma
         auto grad_gamma = (grad_output * x_normalized).sum(/*keep dims except normalized*/);

@@ -31,7 +31,7 @@ public:
      * @param size Number of elements
      * @param allocator Device allocator (defaults to CPU allocator)
      */
-    explicit Storage(size_t size, std::shared_ptr<DeviceAllocator> allocator = nullptr)
+    explicit Storage(size_t size, const std::shared_ptr<DeviceAllocator>& allocator = nullptr)
         : size_(size),
           allocator_(allocator ? allocator : getDefaultCpuAllocator()) {
         if (size > 0) {

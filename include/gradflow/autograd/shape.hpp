@@ -31,7 +31,7 @@ public:
      * @brief Constructs a shape from a vector
      * @param dims Vector of dimensions
      */
-    explicit Shape(const std::vector<size_t>& dims) : dims_(dims) {}
+    explicit Shape(std::vector<size_t> dims) : dims_(std::move(dims)) {}
 
     /**
      * @brief Returns the number of dimensions
@@ -47,7 +47,8 @@ public:
         if (dims_.empty()) {
             return 1;  // Scalar has size 1
         }
-        return std::accumulate(dims_.begin(), dims_.end(), size_t(1), std::multiplies<size_t>());
+        return std::accumulate(
+            dims_.begin(), dims_.end(), static_cast<size_t>(1), std::multiplies<>());
     }
 
     /**
@@ -92,15 +93,15 @@ public:
      * @return True if shapes are broadcastable
      */
     [[nodiscard]] bool isBroadcastableWith(const Shape& other) const {
-        size_t ndim1 = ndim();
-        size_t ndim2 = other.ndim();
-        size_t max_ndim = std::max(ndim1, ndim2);
+        const size_t kNdim1 = ndim();
+        const size_t kNdim2 = other.ndim();
+        const size_t kMaxNdim = std::max(kNdim1, kNdim2);
 
-        for (size_t i = 0; i < max_ndim; ++i) {
-            size_t dim1 = i < ndim1 ? dims_[ndim1 - 1 - i] : 1;
-            size_t dim2 = i < ndim2 ? other.dims_[ndim2 - 1 - i] : 1;
+        for (size_t i = 0; i < kMaxNdim; ++i) {
+            const size_t kDim1 = i < kNdim1 ? dims_[kNdim1 - 1 - i] : 1;
+            const size_t kDim2 = i < kNdim2 ? other.dims_[kNdim2 - 1 - i] : 1;
 
-            if (dim1 != dim2 && dim1 != 1 && dim2 != 1) {
+            if (kDim1 != kDim2 && kDim1 != 1 && kDim2 != 1) {
                 return false;
             }
         }
@@ -120,17 +121,17 @@ public:
             throw std::invalid_argument("Shapes are not broadcastable");
         }
 
-        size_t ndim1 = ndim();
-        size_t ndim2 = other.ndim();
-        size_t max_ndim = std::max(ndim1, ndim2);
+        const size_t kNdim1 = ndim();
+        const size_t kNdim2 = other.ndim();
+        const size_t kMaxNdim = std::max(kNdim1, kNdim2);
 
-        std::vector<size_t> result_dims(max_ndim);
+        std::vector<size_t> result_dims(kMaxNdim);
 
-        for (size_t i = 0; i < max_ndim; ++i) {
-            size_t dim1 = i < ndim1 ? dims_[ndim1 - 1 - i] : 1;
-            size_t dim2 = i < ndim2 ? other.dims_[ndim2 - 1 - i] : 1;
+        for (size_t i = 0; i < kMaxNdim; ++i) {
+            const size_t kDim1 = i < kNdim1 ? dims_[kNdim1 - 1 - i] : 1;
+            const size_t kDim2 = i < kNdim2 ? other.dims_[kNdim2 - 1 - i] : 1;
 
-            result_dims[max_ndim - 1 - i] = std::max(dim1, dim2);
+            result_dims[kMaxNdim - 1 - i] = std::max(kDim1, kDim2);
         }
 
         return Shape(result_dims);
@@ -159,15 +160,15 @@ public:
      * @param shape The shape to compute strides for
      */
     explicit Stride(const Shape& shape) {
-        size_t ndim = shape.ndim();
-        if (ndim == 0) {
+        const size_t kNdim = shape.ndim();
+        if (kNdim == 0) {
             return;  // Scalar has no strides
         }
 
-        strides_.resize(ndim);
-        strides_[ndim - 1] = 1;
+        strides_.resize(kNdim);
+        strides_[kNdim - 1] = 1;
 
-        for (size_t i = ndim - 1; i > 0; --i) {
+        for (size_t i = kNdim - 1; i > 0; --i) {
             strides_[i - 1] = strides_[i] * shape[i];
         }
     }
@@ -176,7 +177,7 @@ public:
      * @brief Constructs strides from a vector of stride values
      * @param strides Vector of stride values
      */
-    explicit Stride(const std::vector<size_t>& strides) : strides_(strides) {}
+    explicit Stride(std::vector<size_t> strides) : strides_(std::move(strides)) {}
 
     /**
      * @brief Returns the number of dimensions

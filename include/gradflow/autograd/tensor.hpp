@@ -33,7 +33,7 @@ public:
     /**
      * @brief Default constructor - creates an empty tensor
      */
-    Tensor() : storage_(nullptr), shape_(), stride_(shape_), offset_(0) {}
+    Tensor() : storage_(nullptr), stride_(Shape()), offset_(0) {}
 
     /**
      * @brief Constructs a tensor with the specified shape
@@ -43,7 +43,7 @@ public:
      * @param shape Shape of the tensor
      * @param allocator Device allocator (defaults to CPU allocator)
      */
-    explicit Tensor(const Shape& shape, std::shared_ptr<DeviceAllocator> allocator = nullptr)
+    explicit Tensor(const Shape& shape, const std::shared_ptr<DeviceAllocator>& allocator = nullptr)
         : storage_(std::make_shared<Storage<T>>(shape.size(), allocator)),
           shape_(shape),
           stride_(shape),
@@ -55,7 +55,8 @@ public:
      * @param data Initializer list of data
      * @param allocator Device allocator (defaults to CPU allocator)
      */
-    Tensor(std::initializer_list<T> data, std::shared_ptr<DeviceAllocator> allocator = nullptr)
+    Tensor(std::initializer_list<T> data,
+           const std::shared_ptr<DeviceAllocator>& allocator = nullptr)
         : storage_(std::make_shared<Storage<T>>(data.size(), allocator)),
           shape_({data.size()}),
           stride_(shape_),
@@ -76,7 +77,7 @@ public:
      */
     Tensor(const Shape& shape,
            const std::vector<T>& data,
-           std::shared_ptr<DeviceAllocator> allocator = nullptr)
+           const std::shared_ptr<DeviceAllocator>& allocator = nullptr)
         : storage_(std::make_shared<Storage<T>>(shape.size(), allocator)),
           shape_(shape),
           stride_(shape),
@@ -96,8 +97,8 @@ public:
      * @param allocator Device allocator (defaults to CPU allocator)
      */
     Tensor(std::initializer_list<std::initializer_list<T>> data,
-           std::shared_ptr<DeviceAllocator> allocator = nullptr)
-        : shape_(),
+           const std::shared_ptr<DeviceAllocator>& allocator = nullptr)
+        : shape_({data.size(), data.begin()->size()}),
           stride_(shape_),
           offset_(0) {
         size_t rows = data.size();
@@ -112,8 +113,6 @@ public:
             }
         }
 
-        shape_ = Shape({rows, cols});
-        stride_ = Stride(shape_);
         storage_ = std::make_shared<Storage<T>>(shape_.size(), allocator);
 
         size_t idx = 0;
@@ -135,6 +134,9 @@ public:
 
     // Move assignment
     Tensor& operator=(Tensor&& other) noexcept = default;
+
+    // Destructor
+    ~Tensor() = default;
 
     /**
      * @brief Returns the shape of the tensor
@@ -187,8 +189,8 @@ public:
                 throw std::out_of_range("Index out of bounds");
             }
         }
-        size_t linear_index = stride_.offset(indices) + offset_;
-        return (*storage_)[linear_index];
+        const size_t kLinearIndex = stride_.offset(indices) + offset_;
+        return (*storage_)[kLinearIndex];
     }
 
     /**
@@ -203,8 +205,8 @@ public:
                 throw std::out_of_range("Index out of bounds");
             }
         }
-        size_t linear_index = stride_.offset(indices) + offset_;
-        return (*storage_)[linear_index];
+        const size_t kLinearIndex = stride_.offset(indices) + offset_;
+        return (*storage_)[kLinearIndex];
     }
 
     /**
@@ -355,11 +357,11 @@ public:
 
         // Check that dims is a valid permutation
         std::vector<bool> seen(ndim(), false);
-        for (size_t dim : dims) {
-            if (dim >= ndim() || seen[dim]) {
+        for (const size_t kDim : dims) {
+            if (kDim >= ndim() || seen[kDim]) {
                 throw std::invalid_argument("Invalid permutation");
             }
-            seen[dim] = true;
+            seen[kDim] = true;
         }
 
         Tensor<T> result;
@@ -424,7 +426,7 @@ public:
      * @return Tensor filled with zeros
      */
     static Tensor<T> zeros(const Shape& shape,
-                           std::shared_ptr<DeviceAllocator> allocator = nullptr) {
+                           const std::shared_ptr<DeviceAllocator>& allocator = nullptr) {
         Tensor<T> result(shape, allocator);
         result.storage_->fill(T(0));
         return result;
@@ -438,7 +440,7 @@ public:
      * @return Tensor filled with ones
      */
     static Tensor<T> ones(const Shape& shape,
-                          std::shared_ptr<DeviceAllocator> allocator = nullptr) {
+                          const std::shared_ptr<DeviceAllocator>& allocator = nullptr) {
         Tensor<T> result(shape, allocator);
         result.storage_->fill(T(1));
         return result;
@@ -456,7 +458,7 @@ public:
     static Tensor<T> randn(const Shape& shape,
                            T mean = T(0),
                            T stddev = T(1),
-                           std::shared_ptr<DeviceAllocator> allocator = nullptr) {
+                           const std::shared_ptr<DeviceAllocator>& allocator = nullptr) {
         Tensor<T> result(shape, allocator);
 
         std::random_device rd;
@@ -478,7 +480,7 @@ public:
      * @return Tensor with random values
      */
     static Tensor<T> rand(const Shape& shape,
-                          std::shared_ptr<DeviceAllocator> allocator = nullptr) {
+                          const std::shared_ptr<DeviceAllocator>& allocator = nullptr) {
         Tensor<T> result(shape, allocator);
 
         std::random_device rd;
@@ -499,7 +501,7 @@ public:
      * @param allocator Device allocator (defaults to CPU allocator)
      * @return Identity matrix of shape [n, n]
      */
-    static Tensor<T> eye(size_t n, std::shared_ptr<DeviceAllocator> allocator = nullptr) {
+    static Tensor<T> eye(size_t n, const std::shared_ptr<DeviceAllocator>& allocator = nullptr) {
         Tensor<T> result = zeros(Shape({n, n}), allocator);
 
         for (size_t i = 0; i < n; ++i) {
@@ -538,13 +540,10 @@ private:
     /**
      * @brief Internal constructor for creating views
      */
-    Tensor(std::shared_ptr<Storage<T>> storage,
-           const Shape& shape,
-           const Stride& stride,
-           size_t offset)
-        : storage_(storage),
-          shape_(shape),
-          stride_(stride),
+    Tensor(std::shared_ptr<Storage<T>> storage, Shape shape, Stride stride, size_t offset)
+        : storage_(std::move(storage)),
+          shape_(std::move(shape)),
+          stride_(std::move(stride)),
           offset_(offset) {}
 
     /**
