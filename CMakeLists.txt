@@ -115,11 +115,14 @@ if(Eigen3_FOUND)
   target_link_libraries(fullscratch INTERFACE Eigen3::Eigen)
 endif()
 
+# Note: fullscratch will link to gradflow_impl after src subdirectory is processed
+
 # ========================================
 # Subdirectories
 # ========================================
 
-# Add source directory (if we have compiled sources later) add_subdirectory(src)
+# Add source directory
+add_subdirectory(src)
 
 # Add tests
 if(GRADFLOW_BUILD_TESTS)

@@ -116,4 +116,61 @@ inline Device metal(int index = 0) {
     return Device(DeviceType::METAL, index);
 }
 
+// Forward declaration
+class DeviceAllocator;
+
+/**
+ * @brief Manages devices and their allocators
+ *
+ * DeviceManager provides centralized device management including:
+ * - Device availability checking
+ * - Device enumeration
+ * - Allocator management and caching
+ */
+class DeviceManager {
+public:
+    /**
+     * @brief Returns the default device (CPU:0)
+     * @return Default CPU device
+     */
+    static Device getDefaultDevice();
+
+    /**
+     * @brief Returns a device of the specified type and index
+     * @param type Device type
+     * @param index Device index (default: 0)
+     * @return Device instance
+     */
+    static Device getDevice(DeviceType type, int index = 0);
+
+    /**
+     * @brief Checks if a device is available
+     * @param type Device type
+     * @param index Device index
+     * @return True if device is available
+     */
+    static bool isDeviceAvailable(DeviceType type, int index);
+
+    /**
+     * @brief Returns the number of devices of the specified type
+     * @param type Device type
+     * @return Number of devices
+     */
+    static int getDeviceCount(DeviceType type);
+
+    /**
+     * @brief Returns an allocator for the specified device
+     *
+     * Allocators are cached per device. Multiple calls for the same
+     * device will return the same allocator instance.
+     *
+     * @param device Device to get allocator for
+     * @return Shared pointer to device allocator
+     */
+    static std::shared_ptr<DeviceAllocator> getAllocator(const Device& device);
+
+private:
+    DeviceManager() = delete;  // Static class, no instantiation
+};
+
 }  // namespace gradflow
