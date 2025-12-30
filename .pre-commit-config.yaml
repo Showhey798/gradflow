@@ -75,6 +75,26 @@ repos:
         # Only run on C++ file changes
         files: \.(cpp|hpp|h)$
 
+      # C++ Build and Test (pre-push only)
+      - id: cpp-build-test
+        name: C++ Build & Test
+        entry: scripts/ci-test-cpp.sh
+        language: script
+        pass_filenames: false
+        stages: [pre-push]
+        files: \.(cpp|hpp|h|cmake|txt)$
+        verbose: true
+
+      # Python Lint and Type Check (pre-push only)
+      - id: python-quality
+        name: Python Quality Checks
+        entry: scripts/ci-lint-python.sh
+        language: script
+        pass_filenames: false
+        stages: [pre-push]
+        files: \.py$
+        verbose: true
+
 # Configuration
 default_language_version:
   python: python3.11
