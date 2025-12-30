@@ -74,3 +74,6 @@ node_modules/
 # OS
 Thumbs.db
 .DS_Store
+
+# Temporary files
+*.temp-stream-*
