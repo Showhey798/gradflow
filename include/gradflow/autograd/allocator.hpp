@@ -89,17 +89,17 @@ public:
         }
 
         // Round up size to be a multiple of alignment
-        const size_t aligned_size = (size + alignment_ - 1) & ~(alignment_ - 1);
+        const size_t kAlignedSize = (size + alignment_ - 1) & ~(alignment_ - 1);
 
 #if defined(_WIN32) || defined(_WIN64)
-        void* ptr = _aligned_malloc(aligned_size, alignment_);
+        void* ptr = _aligned_malloc(kAlignedSize, alignment_);
         if (ptr == nullptr) {
             throw std::bad_alloc();
         }
 #else
         void* ptr = nullptr;
-        const int result = posix_memalign(&ptr, alignment_, aligned_size);
-        if (result != 0) {
+        const int kResult = posix_memalign(&ptr, alignment_, kAlignedSize);
+        if (kResult != 0) {
             throw std::bad_alloc();
         }
 #endif

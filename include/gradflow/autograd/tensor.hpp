@@ -33,7 +33,7 @@ public:
     /**
      * @brief Default constructor - creates an empty tensor
      */
-    Tensor() : storage_(nullptr), shape_(), stride_(Shape()), offset_(0) {}
+    Tensor() : storage_(nullptr), stride_(Shape()), offset_(0) {}
 
     /**
      * @brief Constructs a tensor with the specified shape
@@ -189,8 +189,8 @@ public:
                 throw std::out_of_range("Index out of bounds");
             }
         }
-        size_t linear_index = stride_.offset(indices) + offset_;
-        return (*storage_)[linear_index];
+        const size_t kLinearIndex = stride_.offset(indices) + offset_;
+        return (*storage_)[kLinearIndex];
     }
 
     /**
@@ -205,8 +205,8 @@ public:
                 throw std::out_of_range("Index out of bounds");
             }
         }
-        size_t linear_index = stride_.offset(indices) + offset_;
-        return (*storage_)[linear_index];
+        const size_t kLinearIndex = stride_.offset(indices) + offset_;
+        return (*storage_)[kLinearIndex];
     }
 
     /**
@@ -357,7 +357,7 @@ public:
 
         // Check that dims is a valid permutation
         std::vector<bool> seen(ndim(), false);
-        for (size_t dim : dims) {
+        for (const size_t dim : dims) {
             if (dim >= ndim() || seen[dim]) {
                 throw std::invalid_argument("Invalid permutation");
             }
@@ -540,13 +540,10 @@ private:
     /**
      * @brief Internal constructor for creating views
      */
-    Tensor(std::shared_ptr<Storage<T>> storage,
-           const Shape& shape,
-           const Stride& stride,
-           size_t offset)
-        : storage_(storage),
-          shape_(shape),
-          stride_(stride),
+    Tensor(std::shared_ptr<Storage<T>> storage, Shape shape, Stride stride, size_t offset)
+        : storage_(std::move(storage)),
+          shape_(std::move(shape)),
+          stride_(std::move(stride)),
           offset_(offset) {}
 
     /**

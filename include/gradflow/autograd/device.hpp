@@ -132,6 +132,7 @@ class DeviceManager {
 public:
     // Deleted constructors (static class, no instantiation)
     DeviceManager() = delete;
+    ~DeviceManager() = default;
     DeviceManager(const DeviceManager&) = delete;
     DeviceManager& operator=(const DeviceManager&) = delete;
     DeviceManager(DeviceManager&&) = delete;
