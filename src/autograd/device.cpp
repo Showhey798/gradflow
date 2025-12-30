@@ -1,5 +1,6 @@
-#include "gradflow/autograd/allocator.hpp"
 #include "gradflow/autograd/device.hpp"
+
+#include "gradflow/autograd/allocator.hpp"
 
 #include <map>
 #include <memory>

@@ -9,8 +9,8 @@ include(GoogleTest)
 # Test utilities library (common fixtures, helpers)
 add_library(test_utils INTERFACE)
 target_include_directories(test_utils INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(test_utils INTERFACE fullscratch gradflow_impl GTest::gtest
-                                           GTest::gtest_main)
+target_link_libraries(test_utils INTERFACE fullscratch gradflow_impl
+                                           GTest::gtest GTest::gtest_main)
 
 # Test configuration
 add_compile_definitions(
@@ -106,7 +106,12 @@ fullscratch_add_test(device_test SOURCES test_device.cpp)
 add_custom_target(
   check
   COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --verbose
-  DEPENDS shape_test storage_test tensor_test optimizer_test ops_test device_test
+  DEPENDS shape_test
+          storage_test
+          tensor_test
+          optimizer_test
+          ops_test
+          device_test
           # matrix_test vector_test activation_test loss_test
           # neural_network_test data_loader_test integration_test
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}

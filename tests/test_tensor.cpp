@@ -126,7 +126,6 @@ TEST_F(TensorTest, ElementAccessOutOfBounds) {
 TEST_F(TensorTest, ReshapeContiguous) {
     const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
 
-
     EXPECT_TRUE(kT.isContiguous());
 
     auto reshaped = kT.reshape(Shape({2, 3}));
