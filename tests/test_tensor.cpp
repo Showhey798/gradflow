@@ -72,7 +72,7 @@ TEST_F(TensorTest, ConstructionFromShapeAndData) {
 
 TEST_F(TensorTest, ConstructionFromShapeAndDataMismatch) {
     const Shape shape({2, 3});
-    const std::vector<float> data = {1.0F, 2.0F}  // Wrong size
+    const std::vector<float> data = {1.0F, 2.0F};  // Wrong size
 
     EXPECT_THROW(Tensor<float> t(shape, data), std::invalid_argument);
 }
