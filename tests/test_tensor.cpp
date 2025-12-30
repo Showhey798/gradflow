@@ -2,7 +2,8 @@
 
 #include <gtest/gtest.h>
 
-using namespace gradflow;
+using gradflow::Shape;
+using gradflow::Tensor;
 
 class TensorTest : public ::testing::Test {
 protected:
@@ -23,7 +24,7 @@ TEST_F(TensorTest, ConstructionDefault) {
 }
 
 TEST_F(TensorTest, ConstructionWithShape) {
-    Shape shape({2, 3});
+    const Shape shape({2, 3})
     Tensor<float> t(shape);
 
     EXPECT_EQ(t.shape(), shape);
@@ -34,7 +35,7 @@ TEST_F(TensorTest, ConstructionWithShape) {
 }
 
 TEST_F(TensorTest, ConstructionFromInitializerList1D) {
-    Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F});
+    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F});
 
     EXPECT_EQ(t.ndim(), 1);
     EXPECT_EQ(t.size(), 4);
@@ -59,8 +60,8 @@ TEST_F(TensorTest, ConstructionFromInitializerList2D) {
 }
 
 TEST_F(TensorTest, ConstructionFromShapeAndData) {
-    Shape shape({2, 3});
-    std::vector<float> data = {1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F};
+    const Shape shape({2, 3})
+    const std::vector<float> data = {1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F}
     Tensor<float> t(shape, data);
 
     EXPECT_EQ(t.shape(), shape);
@@ -70,8 +71,8 @@ TEST_F(TensorTest, ConstructionFromShapeAndData) {
 }
 
 TEST_F(TensorTest, ConstructionFromShapeAndDataMismatch) {
-    Shape shape({2, 3});
-    std::vector<float> data = {1.0F, 2.0F};  // Wrong size
+    const Shape shape({2, 3})
+    const std::vector<float> data = {1.0F, 2.0F}  // Wrong size
 
     EXPECT_THROW(Tensor<float> t(shape, data), std::invalid_argument);
 }
@@ -123,7 +124,7 @@ TEST_F(TensorTest, ElementAccessOutOfBounds) {
 // ========================================
 
 TEST_F(TensorTest, ReshapeContiguous) {
-    Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
+    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
     EXPECT_TRUE(t.is_contiguous());
 
     auto reshaped = t.reshape(Shape({2, 3}));
@@ -148,13 +149,13 @@ TEST_F(TensorTest, ReshapeNonContiguous) {
 }
 
 TEST_F(TensorTest, ReshapeSizeMismatch) {
-    Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F});
+    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F});
 
     EXPECT_THROW(t.reshape(Shape({2, 3})), std::invalid_argument);
 }
 
 TEST_F(TensorTest, ViewContiguous) {
-    Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
+    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
     EXPECT_TRUE(t.is_contiguous());
 
     auto viewed = t.view(Shape({3, 2}));
@@ -281,7 +282,7 @@ TEST_F(TensorTest, SlicingZeroCopy) {
 }
 
 TEST_F(TensorTest, SlicingOutOfBounds) {
-    Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F, 5.0F});
+    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F, 5.0F});
 
     EXPECT_THROW(t.slice(1, 0, 2), std::out_of_range);   // Dimension out of range
     EXPECT_THROW(t.slice(0, 3, 2), std::out_of_range);   // start >= end
@@ -335,7 +336,7 @@ TEST_F(TensorTest, SliceZeroCopyVerification) {
 
 TEST_F(TensorTest, ContiguousCheck) {
     // Newly created tensor is contiguous
-    Tensor<float> t1({1.0F, 2.0F, 3.0F, 4.0F});
+    const Tensor<float> t1({1.0F, 2.0F, 3.0F, 4.0F});
     EXPECT_TRUE(t1.is_contiguous());
 
     // View is contiguous
@@ -372,7 +373,7 @@ TEST_F(TensorTest, ContiguousOperation) {
 }
 
 TEST_F(TensorTest, ContiguousAlreadyContiguous) {
-    Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F});
+    const Tensor<float> t({1.0F, 2.0F, 3.0F, 4.0F});
     EXPECT_TRUE(t.is_contiguous());
 
     auto contiguous = t.contiguous();
@@ -419,7 +420,7 @@ TEST_F(TensorTest, FactoryRandn) {
     EXPECT_EQ(t.size(), 100);
 
     // Check that values are not all the same (probabilistic test)
-    float first_value = t[{0}];
+    const float first_value = t[{0}];
     bool has_different_value = false;
     for (size_t i = 1; i < 100; ++i) {
         if (std::abs(t[{i}] - first_value) > 0.001F) {

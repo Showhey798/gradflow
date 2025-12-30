@@ -288,20 +288,20 @@ TEST(StorageTest, ZeroSizeStorage) {
 
 TEST(StorageTest, LargeAllocation) {
     // Test allocation of large storage (10MB)
-    constexpr size_t large_size = 10 * 1024 * 1024 / sizeof(float);
-    Storage<float> storage(large_size);
+    constexpr size_t kLargeSize = static_cast<size_t>(10 * 1024 * 1024) / sizeof(float);
+    Storage<float> storage(kLargeSize);
 
-    EXPECT_EQ(storage.size(), large_size);
+    EXPECT_EQ(storage.size(), kLargeSize);
     EXPECT_NE(storage.data(), nullptr);
 
     // Write and read a few values
     storage[0] = 1.0F;
-    storage[large_size / 2] = 2.0F;
-    storage[large_size - 1] = 3.0F;
+    storage[kLargeSize / 2] = 2.0F;
+    storage[kLargeSize - 1] = 3.0F;
 
     EXPECT_FLOAT_EQ(storage[0], 1.0F);
-    EXPECT_FLOAT_EQ(storage[large_size / 2], 2.0F);
-    EXPECT_FLOAT_EQ(storage[large_size - 1], 3.0F);
+    EXPECT_FLOAT_EQ(storage[kLargeSize / 2], 2.0F);
+    EXPECT_FLOAT_EQ(storage[kLargeSize - 1], 3.0F);
 }
 
 // ========================================
