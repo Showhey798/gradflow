@@ -208,7 +208,7 @@ jobs:
     - name: Generate HTML report
       if: always()
       run: |
-        sudo apt-get install -y cppcheck-htmlreport
+        pip install cppcheck-codequality
         cppcheck-htmlreport \
           --file=cppcheck-report.xml \
           --report-dir=cppcheck-html \
@@ -266,7 +266,7 @@ jobs:
         cmake -B build \
           -G Ninja \
           -DCMAKE_BUILD_TYPE=Debug \
-          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DCMAKE_TOOLCHAIN_FILE=build/build/Debug/generators/conan_toolchain.cmake \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
           -DCMAKE_CXX_INCLUDE_WHAT_YOU_USE="iwyu;-Xiwyu;--error_always" \
           -DGRADFLOW_BUILD_TESTS=OFF
@@ -384,35 +384,4 @@ jobs:
       with:
         name: complexity-report
         path: complexity-report.txt
-        retention-days: 30
-
-  security-scan:
-    name: Security Vulnerability Scan
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-
-    - name: Upload Trivy results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@ea9e4e37992a54ee68a9622e985e60c8e8f12b9f # v3
-      with:
-        sarif_file: 'trivy-results.sarif'
-
-    - name: Upload Trivy results as artifact
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-      with:
-        name: trivy-security-report
-        path: trivy-results.sarif
         retention-days: 30

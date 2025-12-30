@@ -148,5 +148,5 @@ cd fullScratchLibs
 
 ## 参考資料
 
-- [Git Hooks 公式ドキュメント](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks)
+    - [Git Hooks 公式ドキュメント](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks)
 - [GitHub Flow](https://guides.github.com/introduction/flow/)

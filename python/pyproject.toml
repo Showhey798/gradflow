@@ -41,6 +41,8 @@ Repository = "https://github.com/yourusername/fullScratchLibs"
 [tool.ruff]
 line-length = 88
 target-version = "py38"
+
+[tool.ruff.lint]
 extend-select = ["E", "W", "F", "I"]
 extend-ignore = ["E501"]
 

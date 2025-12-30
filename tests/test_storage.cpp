@@ -14,29 +14,29 @@ TEST(DeviceTest, Construction) {
     Device cpu_device(DeviceType::CPU, 0);
     EXPECT_EQ(cpu_device.type(), DeviceType::CPU);
     EXPECT_EQ(cpu_device.index(), 0);
-    EXPECT_TRUE(cpu_device.is_cpu());
-    EXPECT_FALSE(cpu_device.is_cuda());
-    EXPECT_FALSE(cpu_device.is_metal());
+    EXPECT_TRUE(cpu_device.isCpu());
+    EXPECT_FALSE(cpu_device.isCuda());
+    EXPECT_FALSE(cpu_device.isMetal());
 
     Device cuda_device(DeviceType::CUDA, 1);
     EXPECT_EQ(cuda_device.type(), DeviceType::CUDA);
     EXPECT_EQ(cuda_device.index(), 1);
-    EXPECT_FALSE(cuda_device.is_cpu());
-    EXPECT_TRUE(cuda_device.is_cuda());
-    EXPECT_FALSE(cuda_device.is_metal());
+    EXPECT_FALSE(cuda_device.isCpu());
+    EXPECT_TRUE(cuda_device.isCuda());
+    EXPECT_FALSE(cuda_device.isMetal());
 }
 
 TEST(DeviceTest, FactoryFunctions) {
     Device cpu_device = cpu();
-    EXPECT_TRUE(cpu_device.is_cpu());
+    EXPECT_TRUE(cpu_device.isCpu());
     EXPECT_EQ(cpu_device.index(), 0);
 
     Device cuda_device = cuda(2);
-    EXPECT_TRUE(cuda_device.is_cuda());
+    EXPECT_TRUE(cuda_device.isCuda());
     EXPECT_EQ(cuda_device.index(), 2);
 
     Device metal_device = metal(1);
-    EXPECT_TRUE(metal_device.is_metal());
+    EXPECT_TRUE(metal_device.isMetal());
     EXPECT_EQ(metal_device.index(), 1);
 }
 
@@ -53,13 +53,13 @@ TEST(DeviceTest, Equality) {
 
 TEST(DeviceTest, ToString) {
     Device cpu_device = cpu();
-    EXPECT_EQ(cpu_device.to_string(), "cpu:0");
+    EXPECT_EQ(cpu_device.toString(), "cpu:0");
 
     Device cuda_device = cuda(1);
-    EXPECT_EQ(cuda_device.to_string(), "cuda:1");
+    EXPECT_EQ(cuda_device.toString(), "cuda:1");
 
     Device metal_device = metal(2);
-    EXPECT_EQ(metal_device.to_string(), "metal:2");
+    EXPECT_EQ(metal_device.toString(), "metal:2");
 }
 
 // ========================================
@@ -69,7 +69,7 @@ TEST(DeviceTest, ToString) {
 TEST(CPUAllocatorTest, Construction) {
     CPUAllocator allocator;
     EXPECT_EQ(allocator.device(), cpu());
-    EXPECT_EQ(allocator.alignment(), CPUAllocator::DEFAULT_ALIGNMENT);
+    EXPECT_EQ(allocator.alignment(), CPUAllocator::kDefaultAlignment);
 }
 
 TEST(CPUAllocatorTest, CustomAlignment) {
@@ -131,8 +131,8 @@ TEST(CPUAllocatorTest, MultipleAllocations) {
 }
 
 TEST(CPUAllocatorTest, GetDefaultAllocator) {
-    auto allocator1 = get_default_cpu_allocator();
-    auto allocator2 = get_default_cpu_allocator();
+    auto allocator1 = getDefaultCpuAllocator();
+    auto allocator2 = getDefaultCpuAllocator();
 
     // Should return the same instance (singleton pattern)
     EXPECT_EQ(allocator1, allocator2);
@@ -208,11 +208,11 @@ TEST(StorageTest, Fill) {
     Storage<float> storage(10);
 
     // Fill with value
-    storage.fill(3.14f);
+    storage.fill(3.14F);
 
     // Verify all elements
     for (size_t i = 0; i < storage.size(); ++i) {
-        EXPECT_FLOAT_EQ(storage[i], 3.14f);
+        EXPECT_FLOAT_EQ(storage[i], 3.14F);
     }
 }
 
@@ -254,7 +254,7 @@ TEST(StorageTest, CopyFrom) {
     }
 
     // Copy from storage1 to storage2
-    storage2.copy_from(storage1);
+    storage2.copyFrom(storage1);
 
     // Verify data
     for (size_t i = 0; i < storage2.size(); ++i) {
@@ -262,9 +262,9 @@ TEST(StorageTest, CopyFrom) {
     }
 
     // Modifying storage2 should not affect storage1
-    storage2[0] = 999.0f;
-    EXPECT_FLOAT_EQ(storage1[0], 0.0f);
-    EXPECT_FLOAT_EQ(storage2[0], 999.0f);
+    storage2[0] = 999.0F;
+    EXPECT_FLOAT_EQ(storage1[0], 0.0F);
+    EXPECT_FLOAT_EQ(storage2[0], 999.0F);
 }
 
 TEST(StorageTest, CopyFromSizeMismatch) {
@@ -272,7 +272,7 @@ TEST(StorageTest, CopyFromSizeMismatch) {
     Storage<int> storage2(5);
 
     // Copy should throw when sizes don't match
-    EXPECT_THROW(storage2.copy_from(storage1), std::invalid_argument);
+    EXPECT_THROW(storage2.copyFrom(storage1), std::invalid_argument);
 }
 
 TEST(StorageTest, ZeroSizeStorage) {
@@ -283,25 +283,25 @@ TEST(StorageTest, ZeroSizeStorage) {
     EXPECT_EQ(storage.data(), nullptr);
 
     // Fill should be safe on empty storage
-    EXPECT_NO_THROW(storage.fill(1.0f));
+    EXPECT_NO_THROW(storage.fill(1.0F));
 }
 
 TEST(StorageTest, LargeAllocation) {
     // Test allocation of large storage (10MB)
-    constexpr size_t large_size = 10 * 1024 * 1024 / sizeof(float);
-    Storage<float> storage(large_size);
+    constexpr size_t kLargeSize = static_cast<size_t>(10 * 1024 * 1024) / sizeof(float);
+    Storage<float> storage(kLargeSize);
 
-    EXPECT_EQ(storage.size(), large_size);
+    EXPECT_EQ(storage.size(), kLargeSize);
     EXPECT_NE(storage.data(), nullptr);
 
     // Write and read a few values
-    storage[0] = 1.0f;
-    storage[large_size / 2] = 2.0f;
-    storage[large_size - 1] = 3.0f;
+    storage[0] = 1.0F;
+    storage[kLargeSize / 2] = 2.0F;
+    storage[kLargeSize - 1] = 3.0F;
 
-    EXPECT_FLOAT_EQ(storage[0], 1.0f);
-    EXPECT_FLOAT_EQ(storage[large_size / 2], 2.0f);
-    EXPECT_FLOAT_EQ(storage[large_size - 1], 3.0f);
+    EXPECT_FLOAT_EQ(storage[0], 1.0F);
+    EXPECT_FLOAT_EQ(storage[kLargeSize / 2], 2.0F);
+    EXPECT_FLOAT_EQ(storage[kLargeSize - 1], 3.0F);
 }
 
 // ========================================
