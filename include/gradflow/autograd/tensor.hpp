@@ -357,11 +357,11 @@ public:
 
         // Check that dims is a valid permutation
         std::vector<bool> seen(ndim(), false);
-        for (const size_t dim : dims) {
-            if (dim >= ndim() || seen[dim]) {
+        for (const size_t kDim : dims) {
+            if (kDim >= ndim() || seen[kDim]) {
                 throw std::invalid_argument("Invalid permutation");
             }
-            seen[dim] = true;
+            seen[kDim] = true;
         }
 
         Tensor<T> result;

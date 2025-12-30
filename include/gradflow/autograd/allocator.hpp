@@ -118,7 +118,8 @@ public:
 #if defined(_WIN32) || defined(_WIN64)
         _aligned_free(ptr);
 #else
-        free(ptr);  // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
+        free(
+            ptr);  // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory,hicpp-no-malloc)
 #endif
     }
 
