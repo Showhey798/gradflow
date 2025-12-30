@@ -12,6 +12,7 @@ def test_import_gradflow():
     """Test that gradflow package can be imported."""
     try:
         import gradflow
+
         assert gradflow is not None
     except ImportError as e:
         # Allow import failure for now since bindings are not yet implemented
@@ -23,6 +24,7 @@ def test_package_structure():
     """Test basic package structure."""
     try:
         import gradflow
+
         # Check that package has __version__ attribute (once implemented)
         # For now, just verify the package can be accessed
         assert hasattr(gradflow, "__name__")

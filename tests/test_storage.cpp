@@ -208,11 +208,11 @@ TEST(StorageTest, Fill) {
     Storage<float> storage(10);
 
     // Fill with value
-    storage.fill(3.14f);
+    storage.fill(3.14F);
 
     // Verify all elements
     for (size_t i = 0; i < storage.size(); ++i) {
-        EXPECT_FLOAT_EQ(storage[i], 3.14f);
+        EXPECT_FLOAT_EQ(storage[i], 3.14F);
     }
 }
 
@@ -262,9 +262,9 @@ TEST(StorageTest, CopyFrom) {
     }
 
     // Modifying storage2 should not affect storage1
-    storage2[0] = 999.0f;
-    EXPECT_FLOAT_EQ(storage1[0], 0.0f);
-    EXPECT_FLOAT_EQ(storage2[0], 999.0f);
+    storage2[0] = 999.0F;
+    EXPECT_FLOAT_EQ(storage1[0], 0.0F);
+    EXPECT_FLOAT_EQ(storage2[0], 999.0F);
 }
 
 TEST(StorageTest, CopyFromSizeMismatch) {
@@ -283,7 +283,7 @@ TEST(StorageTest, ZeroSizeStorage) {
     EXPECT_EQ(storage.data(), nullptr);
 
     // Fill should be safe on empty storage
-    EXPECT_NO_THROW(storage.fill(1.0f));
+    EXPECT_NO_THROW(storage.fill(1.0F));
 }
 
 TEST(StorageTest, LargeAllocation) {
@@ -295,13 +295,13 @@ TEST(StorageTest, LargeAllocation) {
     EXPECT_NE(storage.data(), nullptr);
 
     // Write and read a few values
-    storage[0] = 1.0f;
-    storage[large_size / 2] = 2.0f;
-    storage[large_size - 1] = 3.0f;
+    storage[0] = 1.0F;
+    storage[large_size / 2] = 2.0F;
+    storage[large_size - 1] = 3.0F;
 
-    EXPECT_FLOAT_EQ(storage[0], 1.0f);
-    EXPECT_FLOAT_EQ(storage[large_size / 2], 2.0f);
-    EXPECT_FLOAT_EQ(storage[large_size - 1], 3.0f);
+    EXPECT_FLOAT_EQ(storage[0], 1.0F);
+    EXPECT_FLOAT_EQ(storage[large_size / 2], 2.0F);
+    EXPECT_FLOAT_EQ(storage[large_size - 1], 3.0F);
 }
 
 // ========================================

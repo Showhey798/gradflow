@@ -251,7 +251,7 @@ jobs:
         run: |
           # Generate coverage report with lcov
           lcov --directory . --capture --output-file coverage.info --ignore-errors mismatch
-          lcov --remove coverage.info '/usr/*' '*/tests/*' '*/examples/*' '*/build/*' --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/tests/*' '*/examples/*' '*/build/*' --output-file coverage.info --ignore-errors unused
           lcov --list coverage.info
 
       - name: Upload coverage to Codecov

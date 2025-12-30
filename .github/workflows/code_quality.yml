@@ -266,7 +266,7 @@ jobs:
         cmake -B build \
           -G Ninja \
           -DCMAKE_BUILD_TYPE=Debug \
-          -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+          -DCMAKE_TOOLCHAIN_FILE=build/build/Debug/generators/conan_toolchain.cmake \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
           -DCMAKE_CXX_INCLUDE_WHAT_YOU_USE="iwyu;-Xiwyu;--error_always" \
           -DGRADFLOW_BUILD_TESTS=OFF
@@ -390,6 +390,7 @@ jobs:
     name: Security Vulnerability Scan
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       security-events: write
 
