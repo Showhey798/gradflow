@@ -130,6 +130,13 @@ class DeviceAllocator;
  */
 class DeviceManager {
 public:
+    // Deleted constructors (static class, no instantiation)
+    DeviceManager() = delete;
+    DeviceManager(const DeviceManager&) = delete;
+    DeviceManager& operator=(const DeviceManager&) = delete;
+    DeviceManager(DeviceManager&&) = delete;
+    DeviceManager& operator=(DeviceManager&&) = delete;
+
     /**
      * @brief Returns the default device (CPU:0)
      * @return Default CPU device
@@ -169,9 +176,6 @@ public:
      * @return Shared pointer to device allocator
      */
     static std::shared_ptr<DeviceAllocator> getAllocator(const Device& device);
-
-private:
-    DeviceManager() = delete;  // Static class, no instantiation
 };
 
 }  // namespace gradflow

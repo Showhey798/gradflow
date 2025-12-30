@@ -31,7 +31,7 @@ public:
      * @brief Constructs a shape from a vector
      * @param dims Vector of dimensions
      */
-    explicit Shape(const std::vector<size_t>& dims) : dims_(dims) {}
+    explicit Shape(std::vector<size_t> dims) : dims_(std::move(dims)) {}
 
     /**
      * @brief Returns the number of dimensions
@@ -47,7 +47,8 @@ public:
         if (dims_.empty()) {
             return 1;  // Scalar has size 1
         }
-        return std::accumulate(dims_.begin(), dims_.end(), size_t(1), std::multiplies<size_t>());
+        return std::accumulate(
+            dims_.begin(), dims_.end(), static_cast<size_t>(1), std::multiplies<>());
     }
 
     /**
@@ -92,13 +93,13 @@ public:
      * @return True if shapes are broadcastable
      */
     [[nodiscard]] bool isBroadcastableWith(const Shape& other) const {
-        size_t ndim1 = ndim();
-        size_t ndim2 = other.ndim();
-        size_t max_ndim = std::max(ndim1, ndim2);
+        const size_t ndim1 = ndim();
+        const size_t ndim2 = other.ndim();
+        const size_t max_ndim = std::max(ndim1, ndim2);
 
         for (size_t i = 0; i < max_ndim; ++i) {
-            size_t dim1 = i < ndim1 ? dims_[ndim1 - 1 - i] : 1;
-            size_t dim2 = i < ndim2 ? other.dims_[ndim2 - 1 - i] : 1;
+            const size_t dim1 = i < ndim1 ? dims_[ndim1 - 1 - i] : 1;
+            const size_t dim2 = i < ndim2 ? other.dims_[ndim2 - 1 - i] : 1;
 
             if (dim1 != dim2 && dim1 != 1 && dim2 != 1) {
                 return false;
@@ -120,15 +121,15 @@ public:
             throw std::invalid_argument("Shapes are not broadcastable");
         }
 
-        size_t ndim1 = ndim();
-        size_t ndim2 = other.ndim();
-        size_t max_ndim = std::max(ndim1, ndim2);
+        const size_t ndim1 = ndim();
+        const size_t ndim2 = other.ndim();
+        const size_t max_ndim = std::max(ndim1, ndim2);
 
         std::vector<size_t> result_dims(max_ndim);
 
         for (size_t i = 0; i < max_ndim; ++i) {
-            size_t dim1 = i < ndim1 ? dims_[ndim1 - 1 - i] : 1;
-            size_t dim2 = i < ndim2 ? other.dims_[ndim2 - 1 - i] : 1;
+            const size_t dim1 = i < ndim1 ? dims_[ndim1 - 1 - i] : 1;
+            const size_t dim2 = i < ndim2 ? other.dims_[ndim2 - 1 - i] : 1;
 
             result_dims[max_ndim - 1 - i] = std::max(dim1, dim2);
         }
@@ -176,7 +177,7 @@ public:
      * @brief Constructs strides from a vector of stride values
      * @param strides Vector of stride values
      */
-    explicit Stride(const std::vector<size_t>& strides) : strides_(strides) {}
+    explicit Stride(std::vector<size_t> strides) : strides_(std::move(strides)) {}
 
     /**
      * @brief Returns the number of dimensions

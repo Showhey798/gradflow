@@ -25,26 +25,26 @@ Tensor<T> matmul(const Tensor<T>& a, const Tensor<T>& b) {
         throw std::invalid_argument("matmul requires 2D tensors");
     }
 
-    size_t M = a.shape()[0];    // rows of a
-    size_t K = a.shape()[1];    // cols of a = rows of b
-    size_t K_b = b.shape()[0];  // rows of b
-    size_t N = b.shape()[1];    // cols of b
+    const size_t m = a.shape()[0];    // rows of a
+    const size_t k = a.shape()[1];    // cols of a = rows of b
+    const size_t k_b = b.shape()[0];  // rows of b
+    const size_t n = b.shape()[1];    // cols of b
 
     // Check that inner dimensions match
-    if (K != K_b) {
-        throw std::invalid_argument("matmul requires matching inner dimensions: a[M, K] @ b[K, N]");
+    if (k != k_b) {
+        throw std::invalid_argument("matmul requires matching inner dimensions: a[m, k] @ b[k, n]");
     }
 
-    // Create result tensor [M, N]
-    Tensor<T> result(Shape({M, N}));
+    // Create result tensor [m, n]
+    Tensor<T> result(Shape({m, n}));
 
     // Naive matrix multiplication implementation
     // result[i, j] = sum_k(a[i, k] * b[k, j])
-    for (size_t i = 0; i < M; ++i) {
-        for (size_t j = 0; j < N; ++j) {
+    for (size_t i = 0; i < m; ++i) {
+        for (size_t j = 0; j < n; ++j) {
             T sum = T(0);
-            for (size_t k = 0; k < K; ++k) {
-                sum += a[{i, k}] * b[{k, j}];
+            for (size_t k_idx = 0; k_idx < k; ++k_idx) {
+                sum += a[{i, k_idx}] * b[{k_idx, j}];
             }
             result[{i, j}] = sum;
         }

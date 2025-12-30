@@ -40,16 +40,16 @@ inline Shape broadcastShapes(const Shape& shape1, const Shape& shape2) {
 inline std::vector<size_t> getBroadcastIndices(const std::vector<size_t>& output_indices,
                                                const Shape& input_shape,
                                                const Shape& output_shape) {
-    size_t input_ndim = input_shape.ndim();
-    size_t output_ndim = output_shape.ndim();
+    const size_t input_ndim = input_shape.ndim();
+    const size_t output_ndim = output_shape.ndim();
     std::vector<size_t> input_indices(input_ndim);
 
     // Process dimensions from right to left
     for (size_t i = 0; i < output_ndim; ++i) {
-        size_t output_idx = output_indices[output_ndim - 1 - i];
+        const size_t output_idx = output_indices[output_ndim - 1 - i];
 
         if (i < input_ndim) {
-            size_t input_dim = input_shape[input_ndim - 1 - i];
+            const size_t input_dim = input_shape[input_ndim - 1 - i];
             // If input dimension is 1, broadcast (use index 0)
             input_indices[input_ndim - 1 - i] = (input_dim == 1) ? 0 : output_idx;
         }

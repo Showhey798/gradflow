@@ -16,8 +16,17 @@ namespace gradflow {
  * memory on different devices (CPU, GPU, etc.).
  */
 class DeviceAllocator {
+protected:
+    DeviceAllocator() = default;
+
 public:
     virtual ~DeviceAllocator() = default;
+
+    // Delete copy and move operations (abstract interface)
+    DeviceAllocator(const DeviceAllocator&) = delete;
+    DeviceAllocator& operator=(const DeviceAllocator&) = delete;
+    DeviceAllocator(DeviceAllocator&&) = delete;
+    DeviceAllocator& operator=(DeviceAllocator&&) = delete;
 
     /**
      * @brief Allocates memory on the device
@@ -80,7 +89,7 @@ public:
         }
 
         // Round up size to be a multiple of alignment
-        size_t aligned_size = (size + alignment_ - 1) & ~(alignment_ - 1);
+        const size_t aligned_size = (size + alignment_ - 1) & ~(alignment_ - 1);
 
 #if defined(_WIN32) || defined(_WIN64)
         void* ptr = _aligned_malloc(aligned_size, alignment_);
@@ -89,7 +98,7 @@ public:
         }
 #else
         void* ptr = nullptr;
-        int result = posix_memalign(&ptr, alignment_, aligned_size);
+        const int result = posix_memalign(&ptr, alignment_, aligned_size);
         if (result != 0) {
             throw std::bad_alloc();
         }
@@ -109,7 +118,7 @@ public:
 #if defined(_WIN32) || defined(_WIN64)
         _aligned_free(ptr);
 #else
-        free(ptr);
+        free(ptr);  // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
 #endif
     }
 
