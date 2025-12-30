@@ -25,10 +25,10 @@ env:
 
 jobs:
   python-bindings:
-    # Temporarily disabled until Python bindings are implemented
-    if: false
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    # Allow this job to fail until Python bindings are fully implemented
+    continue-on-error: true
 
     strategy:
       fail-fast: false
@@ -84,53 +84,70 @@ jobs:
 
     - name: Build Python bindings (Unix)
       if: matrix.os != 'windows-latest'
+      continue-on-error: true
       run: |
-        cmake -B build \
+        # Try to build Python bindings if CMake option exists
+        if cmake -B build \
           -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
           -DGRADFLOW_BUILD_PYTHON=ON \
           -DGRADFLOW_BUILD_TESTS=OFF \
-          -DPython_EXECUTABLE=$(which python)
-        cmake --build build --config Release --parallel
+          -DPython_EXECUTABLE=$(which python) 2>/dev/null; then
+          cmake --build build --config Release --parallel || echo "Build failed (expected until bindings are implemented)"
+        else
+          echo "CMake configuration does not support Python bindings yet"
+        fi
 
     - name: Build Python bindings (Windows)
       if: matrix.os == 'windows-latest'
+      continue-on-error: true
       run: |
-        cmake -B build `
+        # Try to build Python bindings if CMake option exists
+        if (cmake -B build `
           -G Ninja `
           -DCMAKE_BUILD_TYPE=Release `
           -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake `
           -DGRADFLOW_BUILD_PYTHON=ON `
           -DGRADFLOW_BUILD_TESTS=OFF `
-          -DPython_EXECUTABLE=$(python -c "import sys; print(sys.executable)")
-        cmake --build build --config Release --parallel
+          -DPython_EXECUTABLE=$(python -c "import sys; print(sys.executable)") 2>$null) {
+          cmake --build build --config Release --parallel
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Build failed (expected until bindings are implemented)"
+          }
+        } else {
+          Write-Host "CMake configuration does not support Python bindings yet"
+        }
 
     - name: Install Python package
+      continue-on-error: true
       run: |
-        pip install -e .
+        # Install in development mode with dev dependencies
+        pip install -e python/[dev] || echo "Installation failed (expected until package is complete)"
 
     - name: Run Python tests
+      # Allow tests to fail until bindings are complete
+      continue-on-error: true
       run: |
-        pytest python/tests \
-          -v \
-          --cov=gradflow \
-          --cov-report=xml \
-          --cov-report=html \
-          --cov-report=term
+        # Run tests without coverage until bindings are implemented
+        pytest python/tests -v || echo "Tests failed (expected until bindings are complete)"
 
     - name: Run Python type checking
+      # Allow type checking to fail until bindings are complete
+      continue-on-error: true
       run: |
-        pyright python
+        pyright python || echo "Type checking failed (expected until bindings are complete)"
 
     - name: Run Python linting and formatting
+      # Linting should pass even without bindings
       run: |
         ruff format --check python
         ruff check python
 
     - name: Upload coverage to Codecov
-      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
-      uses: codecov/codecov-action@v4
+      # Skip until coverage is enabled
+      if: false && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4
       with:
         files: ./coverage.xml
         flags: python
@@ -138,7 +155,8 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Upload test results
-      if: always()
+      # Skip until coverage and test reports are generated
+      if: false
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: pytest-results-${{ matrix.os }}-py${{ matrix.python-version }}

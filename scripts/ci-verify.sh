@@ -36,6 +36,7 @@ run_check() {
 run_check "C++ Format Check" "${SCRIPT_DIR}/ci-format-check.sh"
 run_check "Python Lint" "${SCRIPT_DIR}/ci-lint-python.sh"
 run_check "C++ Tests" "${SCRIPT_DIR}/ci-test-cpp.sh"
+run_check "Python Tests" "${SCRIPT_DIR}/ci-test-python.sh"
 
 # Report results
 echo ""
