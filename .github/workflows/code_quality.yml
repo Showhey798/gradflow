@@ -208,7 +208,7 @@ jobs:
     - name: Generate HTML report
       if: always()
       run: |
-        sudo apt-get install -y cppcheck-htmlreport
+        pip install cppcheck-codequality
         cppcheck-htmlreport \
           --file=cppcheck-report.xml \
           --report-dir=cppcheck-html \
@@ -406,7 +406,7 @@ jobs:
         output: 'trivy-results.sarif'
 
     - name: Upload Trivy results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@ea9e4e37992a54ee68a9622e985e60c8e8f12b9f # v3
+      uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
       with:
         sarif_file: 'trivy-results.sarif'
 

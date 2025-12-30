@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(GradFlow
-    VERSION 0.1.0
-    DESCRIPTION "A comprehensive C++ machine learning library built from scratch"
-    LANGUAGES CXX
-)
+project(
+  GradFlow
+  VERSION 0.1.0
+  DESCRIPTION "A comprehensive C++ machine learning library built from scratch"
+  LANGUAGES CXX)
 
 # ========================================
 # Project Configuration
