@@ -29,6 +29,35 @@ protected:
 
     // Helper function to check if two floats are approximately equal
     bool approx_equal(float a, float b, float epsilon = 1e-5f) { return std::abs(a - b) < epsilon; }
+
+    // Helper function to get appropriate test size based on sanitizer presence
+    // Sanitizers add significant overhead, so we use smaller sizes to prevent timeouts
+    size_t getLargeTestSize(size_t normal_size) {
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer) || \
+    __has_feature(memory_sanitizer)
+        return std::max(size_t{10}, normal_size / 50);  // 50分の1のサイズを使用（最小10）
+#endif
+#endif
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
+        return std::max(size_t{10}, normal_size / 50);  // 50分の1のサイズを使用（最小10）
+#endif
+        return normal_size;  // 通常サイズを使用
+    }
+
+    // Helper function to get iteration count based on sanitizer presence
+    size_t getIterationCount(size_t normal_count) {
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer) || \
+    __has_feature(memory_sanitizer)
+        return std::max(size_t{5}, normal_count / 20);  // 20分の1の反復回数を使用（最小5）
+#endif
+#endif
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
+        return std::max(size_t{5}, normal_count / 20);  // 20分の1の反復回数を使用（最小5）
+#endif
+        return normal_count;  // 通常の反復回数を使用
+    }
 };
 
 // ========================================
@@ -198,36 +227,32 @@ TEST_F(Phase1IntegrationTest, MathematicalFunctions) {
  * @brief 大規模 Tensor での統合テスト
  *
  * より大きなサイズの Tensor で演算が正しく動作することを確認します。
+ * Sanitizer 実行時は小さいサイズを使用してタイムアウトを防ぎます。
  */
 TEST_F(Phase1IntegrationTest, LargeScaleOperations) {
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer) || \
-    __has_feature(memory_sanitizer)
-    GTEST_SKIP() << "Skipping LargeScaleOperations test under sanitizers (timeout issue)";
-#endif
-#endif
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
-    GTEST_SKIP() << "Skipping LargeScaleOperations test under sanitizers (timeout issue)";
-#endif
+    // Adjust test size based on sanitizer presence
+    const size_t rows = getLargeTestSize(500);
+    const size_t mid = getLargeTestSize(1000);
+    const size_t cols = getLargeTestSize(200);
 
     // Create large tensors
-    auto a = Tensor<float>::randn({500, 1000});
-    auto b = Tensor<float>::randn({1000, 200});
+    auto a = Tensor<float>::randn({rows, mid});
+    auto b = Tensor<float>::randn({mid, cols});
 
     // Matrix multiplication
-    auto c = matmul(a, b);  // [500, 200]
-    EXPECT_EQ(c.shape(), Shape({500, 200}));
+    auto c = matmul(a, b);  // [rows, cols]
+    EXPECT_EQ(c.shape(), Shape({rows, cols}));
 
     // Reduction
     auto c_sum = sum(c);
     EXPECT_EQ(c_sum.shape(), Shape({}));
 
     // Element-wise operations on large tensors
-    auto d = add(c, Tensor<float>::ones({500, 200}));
-    auto ones_times_half = mul(Tensor<float>::ones({500, 200}), Tensor<float>({0.5F}));
+    auto d = add(c, Tensor<float>::ones({rows, cols}));
+    auto ones_times_half = mul(Tensor<float>::ones({rows, cols}), Tensor<float>({0.5F}));
     auto e = mul(d, ones_times_half);
 
-    EXPECT_EQ(e.shape(), Shape({500, 200}));
+    EXPECT_EQ(e.shape(), Shape({rows, cols}));
     EXPECT_EQ(e.device().type(), DeviceType::CPU);
 }
 
@@ -240,23 +265,18 @@ TEST_F(Phase1IntegrationTest, LargeScaleOperations) {
  *
  * 複数の Tensor を作成・破棄してもメモリリークが発生しないことを確認します。
  * AddressSanitizer でメモリリークを検出します。
+ * Sanitizer 実行時は反復回数を減らしてタイムアウトを防ぎます。
  */
 TEST_F(Phase1IntegrationTest, MemoryManagement) {
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer) || \
-    __has_feature(memory_sanitizer)
-    GTEST_SKIP() << "Skipping MemoryManagement test under sanitizers (timeout issue)";
-#endif
-#endif
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
-    GTEST_SKIP() << "Skipping MemoryManagement test under sanitizers (timeout issue)";
-#endif
-
-    const size_t kNumIterations = 100;
+    // Adjust iteration count and tensor sizes based on sanitizer presence
+    const size_t kNumIterations = getIterationCount(100);
+    const size_t rows = getLargeTestSize(100);
+    const size_t mid = getLargeTestSize(200);
+    const size_t cols = getLargeTestSize(50);
 
     for (size_t i = 0; i < kNumIterations; ++i) {
-        auto a = Tensor<float>::randn({100, 200});
-        auto b = Tensor<float>::randn({200, 50});
+        auto a = Tensor<float>::randn({rows, mid});
+        auto b = Tensor<float>::randn({mid, cols});
         auto c = matmul(a, b);
         auto d = c.transpose(0, 1);
         auto e = sum(d, 0);

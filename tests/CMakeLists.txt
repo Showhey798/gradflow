@@ -18,7 +18,7 @@ add_compile_definitions(
 
 # Helper function to add a test with common settings
 function(fullscratch_add_test TEST_NAME)
-  cmake_parse_arguments(ARG "" "" "SOURCES;LIBS" ${ARGN})
+  cmake_parse_arguments(ARG "" "TIMEOUT" "SOURCES;LIBS" ${ARGN})
 
   add_executable(${TEST_NAME} ${ARG_SOURCES})
 
@@ -31,12 +31,17 @@ function(fullscratch_add_test TEST_NAME)
                CXX_STANDARD_REQUIRED ON
                CXX_EXTENSIONS OFF)
 
+  # Set timeout value (default 60 seconds)
+  if(NOT ARG_TIMEOUT)
+    set(ARG_TIMEOUT 60)
+  endif()
+
   # Add to CTest
   gtest_discover_tests(
     ${TEST_NAME}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     PROPERTIES
-    TIMEOUT 60 ENVIRONMENT "GTEST_COLOR=1")
+    TIMEOUT ${ARG_TIMEOUT} ENVIRONMENT "GTEST_COLOR=1")
 
   # Add coverage support if enabled
   if(FULLSCRATCH_ENABLE_COVERAGE)
@@ -77,9 +82,11 @@ fullscratch_add_test(device_test SOURCES test_device.cpp)
 # Operation tests
 fullscratch_add_test(operation_test SOURCES test_operation.cpp)
 
-# Phase 1 integration tests
+# Phase 1 integration tests Set longer timeout (300s) to accommodate sanitizer
+# overhead Sanitizers can add 10-50x overhead, especially for large scale
+# operations
 fullscratch_add_test(phase1_integration_test SOURCES
-                     test_phase1_integration.cpp)
+                     test_phase1_integration.cpp TIMEOUT 300)
 
 # TODO: Implement these tests # Matrix operations tests
 # fullscratch_add_test(matrix_test SOURCES test_matrix.cpp )
