@@ -47,8 +47,8 @@ public:
         const auto& x = inputs[0];
 
         // Constants
-        constexpr T sqrt_2_over_pi = static_cast<T>(0.7978845608028654);  // √(2/π)
-        constexpr T coeff = static_cast<T>(0.044715);
+        constexpr T kSqrt2OverPi = static_cast<T>(0.7978845608028654);  // √(2/π)
+        constexpr T kCoeff = static_cast<T>(0.044715);
 
         // Compute: 0.5 * x * (1 + tanh(√(2/π) * (x + 0.044715 * x³)))
         Tensor<T> x_cubed(x.shape());
@@ -58,7 +58,7 @@ public:
 
         Tensor<T> coeff_x_cubed(x_cubed.shape());
         for (size_t i = 0; i < x_cubed.size(); ++i) {
-            coeff_x_cubed.data()[i] = coeff * x_cubed.data()[i];
+            coeff_x_cubed.data()[i] = kCoeff * x_cubed.data()[i];
         }
 
         Tensor<T> inner(x.shape());
@@ -68,7 +68,7 @@ public:
 
         Tensor<T> scaled_inner(inner.shape());
         for (size_t i = 0; i < inner.size(); ++i) {
-            scaled_inner.data()[i] = sqrt_2_over_pi * inner.data()[i];
+            scaled_inner.data()[i] = kSqrt2OverPi * inner.data()[i];
         }
 
         auto tanh_value = tanh(scaled_inner);
@@ -95,8 +95,8 @@ public:
         auto tanh_value = this->getSavedTensor("tanh_value");
 
         // Constants
-        constexpr T sqrt_2_over_pi = static_cast<T>(0.7978845608028654);  // √(2/π)
-        constexpr T coeff = static_cast<T>(0.044715);
+        constexpr T kSqrt2OverPi = static_cast<T>(0.7978845608028654);  // √(2/π)
+        constexpr T kCoeff = static_cast<T>(0.044715);
 
         // Compute ∂y/∂x
         // cdf = 0.5 * (1 + tanh(...))
@@ -121,7 +121,7 @@ public:
             x_squared.data()[i] = input.data()[i] * input.data()[i];
         }
 
-        T three_coeff = T(3) * coeff;
+        T three_coeff = T(3) * kCoeff;
         Tensor<T> three_coeff_x_squared(x_squared.shape());
         for (size_t i = 0; i < x_squared.size(); ++i) {
             three_coeff_x_squared.data()[i] = three_coeff * x_squared.data()[i];
@@ -134,7 +134,7 @@ public:
 
         Tensor<T> pdf_part(one_minus_tanh_squared.shape());
         for (size_t i = 0; i < one_minus_tanh_squared.size(); ++i) {
-            pdf_part.data()[i] = one_minus_tanh_squared.data()[i] * sqrt_2_over_pi;
+            pdf_part.data()[i] = one_minus_tanh_squared.data()[i] * kSqrt2OverPi;
         }
 
         Tensor<T> pdf_approximation(pdf_part.shape());
