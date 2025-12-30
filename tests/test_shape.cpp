@@ -172,15 +172,15 @@ TEST(StrideTest, CustomStride) {
 TEST(StrideTest, IsContiguous) {
     // Row-major strides are contiguous
     Stride stride1(Shape({3, 4}));
-    EXPECT_TRUE(stride1.is_contiguous(Shape({3, 4})));
+    EXPECT_TRUE(stride1.isContiguous(Shape({3, 4})));
 
     // Custom strides may not be contiguous
     Stride stride2(std::vector<size_t>({1, 3}));
-    EXPECT_FALSE(stride2.is_contiguous(Shape({3, 4})));
+    EXPECT_FALSE(stride2.isContiguous(Shape({3, 4})));
 
     // Transposed view is not contiguous
     Stride stride3(std::vector<size_t>({1, 4}));
-    EXPECT_FALSE(stride3.is_contiguous(Shape({4, 3})));
+    EXPECT_FALSE(stride3.isContiguous(Shape({4, 3})));
 }
 
 }  // namespace test

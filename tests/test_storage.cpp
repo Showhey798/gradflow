@@ -254,7 +254,7 @@ TEST(StorageTest, CopyFrom) {
     }
 
     // Copy from storage1 to storage2
-    storage2.copy_from(storage1);
+    storage2.copyFrom(storage1);
 
     // Verify data
     for (size_t i = 0; i < storage2.size(); ++i) {

@@ -33,7 +33,7 @@ public:
      */
     explicit Storage(size_t size, std::shared_ptr<DeviceAllocator> allocator = nullptr)
         : size_(size),
-          allocator_(allocator ? allocator : get_default_cpu_allocator()) {
+          allocator_(allocator ? allocator : getDefaultCpuAllocator()) {
         if (size > 0) {
             data_ = static_cast<T*>(allocator_->allocate(size * sizeof(T)));
         } else {
@@ -91,25 +91,25 @@ public:
      * @brief Returns a pointer to the data
      * @return Data pointer
      */
-    T* data() { return data_; }
+    [[nodiscard]] T* data() { return data_; }
 
     /**
      * @brief Returns a const pointer to the data
      * @return Const data pointer
      */
-    const T* data() const { return data_; }
+    [[nodiscard]] const T* data() const { return data_; }
 
     /**
      * @brief Returns the number of elements
      * @return Number of elements
      */
-    size_t size() const { return size_; }
+    [[nodiscard]] size_t size() const { return size_; }
 
     /**
      * @brief Checks if the storage is empty
      * @return True if empty
      */
-    bool empty() const { return size_ == 0 || data_ == nullptr; }
+    [[nodiscard]] bool empty() const { return size_ == 0 || data_ == nullptr; }
 
     /**
      * @brief Access element at index (no bounds checking)
@@ -165,7 +165,7 @@ public:
      * @brief Returns the device this storage is on
      * @return Device
      */
-    Device device() const {
+    [[nodiscard]] Device device() const {
         if (allocator_ == nullptr) {
             return cpu();
         }
@@ -176,7 +176,7 @@ public:
      * @brief Returns the allocator used by this storage
      * @return Shared pointer to allocator
      */
-    std::shared_ptr<DeviceAllocator> allocator() const { return allocator_; }
+    [[nodiscard]] std::shared_ptr<DeviceAllocator> allocator() const { return allocator_; }
 
     /**
      * @brief Copies data from another storage
@@ -186,7 +186,7 @@ public:
      * @param other Source storage
      * @throws std::invalid_argument if sizes don't match
      */
-    void copy_from(const Storage<T>& other) {
+    void copyFrom(const Storage<T>& other) {
         if (size_ != other.size_) {
             throw std::invalid_argument("Storage sizes must match for copy");
         }

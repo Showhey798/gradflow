@@ -140,31 +140,31 @@ public:
      * @brief Returns the shape of the tensor
      * @return Shape reference
      */
-    const Shape& shape() const { return shape_; }
+    [[nodiscard]] const Shape& shape() const { return shape_; }
 
     /**
      * @brief Returns the stride of the tensor
      * @return Stride reference
      */
-    const Stride& stride() const { return stride_; }
+    [[nodiscard]] const Stride& stride() const { return stride_; }
 
     /**
      * @brief Returns the number of dimensions
      * @return Number of dimensions
      */
-    size_t ndim() const { return shape_.ndim(); }
+    [[nodiscard]] size_t ndim() const { return shape_.ndim(); }
 
     /**
      * @brief Returns the total number of elements
      * @return Total number of elements
      */
-    size_t size() const { return shape_.size(); }
+    [[nodiscard]] size_t size() const { return shape_.size(); }
 
     /**
      * @brief Returns the device this tensor is on
      * @return Device
      */
-    Device device() const {
+    [[nodiscard]] Device device() const {
         if (storage_ == nullptr) {
             return cpu();
         }
@@ -235,7 +235,7 @@ public:
      *
      * @return True if contiguous
      */
-    bool is_contiguous() const { return stride_.is_contiguous(shape_); }
+    [[nodiscard]] bool isContiguous() const { return stride_.isContiguous(shape_); }
 
     /**
      * @brief Returns a contiguous copy of the tensor
@@ -246,7 +246,7 @@ public:
      * @return Contiguous tensor
      */
     Tensor<T> contiguous() const {
-        if (is_contiguous() && offset_ == 0) {
+        if (isContiguous() && offset_ == 0) {
             return *this;
         }
 
@@ -254,7 +254,7 @@ public:
         Tensor<T> result(shape_, storage_->allocator());
 
         // Copy elements in the correct order
-        copy_to_contiguous(result);
+        copyToContiguous(result);
 
         return result;
     }
@@ -270,7 +270,7 @@ public:
      * @throws std::invalid_argument if tensor is not contiguous or sizes don't match
      */
     Tensor<T> view(const Shape& new_shape) const {
-        if (!is_contiguous()) {
+        if (!isContiguous()) {
             throw std::invalid_argument("Tensor must be contiguous for view operation");
         }
         if (new_shape.size() != size()) {
@@ -297,7 +297,7 @@ public:
             throw std::invalid_argument("Total number of elements must remain the same");
         }
 
-        if (is_contiguous()) {
+        if (isContiguous()) {
             return view(new_shape);
         } else {
             // Need to make contiguous first
@@ -515,7 +515,7 @@ public:
      * @param other Template tensor
      * @return New tensor with same shape and device
      */
-    static Tensor<T> zeros_like(const Tensor<T>& other) {
+    static Tensor<T> zerosLike(const Tensor<T>& other) {
         return zeros(other.shape(), other.storage_->allocator());
     }
 
@@ -525,7 +525,7 @@ public:
      * @param other Template tensor
      * @return New tensor with same shape and device
      */
-    static Tensor<T> ones_like(const Tensor<T>& other) {
+    static Tensor<T> onesLike(const Tensor<T>& other) {
         return ones(other.shape(), other.storage_->allocator());
     }
 
@@ -550,13 +550,13 @@ private:
     /**
      * @brief Helper function to copy data to a contiguous tensor
      */
-    void copy_to_contiguous(Tensor<T>& dest) const {
+    void copyToContiguous(Tensor<T>& dest) const {
         // Recursive helper to iterate through all indices
         std::vector<size_t> indices(ndim(), 0);
-        copy_recursive(dest, indices, 0);
+        copyRecursive(dest, indices, 0);
     }
 
-    void copy_recursive(Tensor<T>& dest, std::vector<size_t>& indices, size_t dim) const {
+    void copyRecursive(Tensor<T>& dest, std::vector<size_t>& indices, size_t dim) const {
         if (dim == ndim()) {
             // Base case: copy the element
             dest[indices] = (*this)[indices];
