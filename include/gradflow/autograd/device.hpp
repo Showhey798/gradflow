@@ -7,7 +7,7 @@ namespace gradflow {
 /**
  * @brief Enum representing different device types
  */
-enum class DeviceType { CPU, CUDA, Metal };
+enum class DeviceType { CPU, CUDA, METAL };
 
 /**
  * @brief Represents a device (CPU, GPU, etc.)
@@ -27,31 +27,31 @@ public:
      * @brief Returns the device type
      * @return Device type
      */
-    DeviceType type() const { return type_; }
+    [[nodiscard]] DeviceType type() const { return type_; }
 
     /**
      * @brief Returns the device index
      * @return Device index
      */
-    int index() const { return index_; }
+    [[nodiscard]] int index() const { return index_; }
 
     /**
      * @brief Checks if this device is a CPU
      * @return True if device is CPU
      */
-    bool is_cpu() const { return type_ == DeviceType::CPU; }
+    [[nodiscard]] bool isCpu() const { return type_ == DeviceType::CPU; }
 
     /**
      * @brief Checks if this device is a CUDA device
      * @return True if device is CUDA
      */
-    bool is_cuda() const { return type_ == DeviceType::CUDA; }
+    [[nodiscard]] bool isCuda() const { return type_ == DeviceType::CUDA; }
 
     /**
      * @brief Checks if this device is a Metal device
      * @return True if device is Metal
      */
-    bool is_metal() const { return type_ == DeviceType::Metal; }
+    [[nodiscard]] bool isMetal() const { return type_ == DeviceType::METAL; }
 
     /**
      * @brief Equality comparison
@@ -69,7 +69,7 @@ public:
      * @brief Returns a string representation of the device
      * @return String representation
      */
-    std::string to_string() const {
+    [[nodiscard]] std::string toString() const {
         std::string type_str;
         switch (type_) {
             case DeviceType::CPU:
@@ -78,7 +78,7 @@ public:
             case DeviceType::CUDA:
                 type_str = "cuda";
                 break;
-            case DeviceType::Metal:
+            case DeviceType::METAL:
                 type_str = "metal";
                 break;
         }
@@ -113,7 +113,7 @@ inline Device cuda(int index = 0) {
  * @return Metal device
  */
 inline Device metal(int index = 0) {
-    return Device(DeviceType::Metal, index);
+    return Device(DeviceType::METAL, index);
 }
 
 }  // namespace gradflow

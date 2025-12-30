@@ -37,13 +37,13 @@ public:
      * @brief Returns the device this allocator manages
      * @return Device reference
      */
-    virtual Device device() const = 0;
+    [[nodiscard]] virtual Device device() const = 0;
 
     /**
      * @brief Returns the alignment requirement for allocations
      * @return Alignment in bytes
      */
-    virtual size_t alignment() const = 0;
+    [[nodiscard]] virtual size_t alignment() const = 0;
 };
 
 /**
@@ -56,13 +56,13 @@ public:
     /**
      * @brief Default alignment for CPU allocations (64 bytes for SIMD)
      */
-    static constexpr size_t DEFAULT_ALIGNMENT = 64;
+    static constexpr size_t kDefaultAlignment = 64;
 
     /**
      * @brief Constructs a CPU allocator with optional custom alignment
      * @param alignment Alignment requirement (must be a power of 2)
      */
-    explicit CPUAllocator(size_t alignment = DEFAULT_ALIGNMENT) : alignment_(alignment) {
+    explicit CPUAllocator(size_t alignment = kDefaultAlignment) : alignment_(alignment) {
         if (alignment == 0 || (alignment & (alignment - 1)) != 0) {
             throw std::invalid_argument("Alignment must be a power of 2");
         }
@@ -117,13 +117,13 @@ public:
      * @brief Returns the CPU device
      * @return CPU device
      */
-    Device device() const override { return cpu(); }
+    [[nodiscard]] Device device() const override { return cpu(); }
 
     /**
      * @brief Returns the alignment requirement
      * @return Alignment in bytes
      */
-    size_t alignment() const override { return alignment_; }
+    [[nodiscard]] size_t alignment() const override { return alignment_; }
 
 private:
     size_t alignment_;
@@ -133,7 +133,7 @@ private:
  * @brief Returns a shared pointer to the default CPU allocator
  * @return Shared pointer to CPU allocator
  */
-inline std::shared_ptr<DeviceAllocator> get_default_cpu_allocator() {
+inline std::shared_ptr<DeviceAllocator> getDefaultCpuAllocator() {
     static auto allocator = std::make_shared<CPUAllocator>();
     return allocator;
 }

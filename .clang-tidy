@@ -20,6 +20,7 @@ Checks: >
   google-*,
   -google-readability-todo,
   -google-runtime-references,
+  -google-build-using-namespace,
   hicpp-*,
   -hicpp-no-array-decay,
   -hicpp-avoid-c-arrays,
@@ -30,7 +31,9 @@ Checks: >
   -modernize-use-trailing-return-type,
   -modernize-avoid-c-arrays,
   performance-*,
+  -performance-enum-size,
   portability-*,
+  -portability-avoid-pragma-once,
   readability-*,
   -readability-magic-numbers,
   -readability-function-cognitive-complexity,
@@ -42,9 +45,6 @@ WarningsAsErrors: '*'
 
 # ヘッダーフィルター（プロジェクト内のヘッダーのみチェック）
 HeaderFilterRegex: '(include|src)/gradflow/.*'
-
-# 分析オプション
-AnalyzeTemporaryDtors: false
 
 # チェック固有のオプション
 CheckOptions:

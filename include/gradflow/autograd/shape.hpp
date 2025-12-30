@@ -37,13 +37,13 @@ public:
      * @brief Returns the number of dimensions
      * @return Number of dimensions
      */
-    size_t ndim() const { return dims_.size(); }
+    [[nodiscard]] size_t ndim() const { return dims_.size(); }
 
     /**
      * @brief Returns the total number of elements
      * @return Total number of elements (product of all dimensions)
      */
-    size_t size() const {
+    [[nodiscard]] size_t size() const {
         if (dims_.empty()) {
             return 1;  // Scalar has size 1
         }
@@ -55,7 +55,7 @@ public:
      * @param index Dimension index
      * @return Dimension value
      */
-    size_t operator[](size_t index) const { return dims_[index]; }
+    [[nodiscard]] size_t operator[](size_t index) const { return dims_[index]; }
 
     /**
      * @brief Access dimension at index (with bounds checking)
@@ -63,7 +63,7 @@ public:
      * @return Dimension value
      * @throws std::out_of_range if index is out of bounds
      */
-    size_t at(size_t index) const {
+    [[nodiscard]] size_t at(size_t index) const {
         if (index >= dims_.size()) {
             throw std::out_of_range("Shape index out of range");
         }
@@ -91,7 +91,7 @@ public:
      * @param other The other shape to check against
      * @return True if shapes are broadcastable
      */
-    bool is_broadcastable_with(const Shape& other) const {
+    [[nodiscard]] bool isBroadcastableWith(const Shape& other) const {
         size_t ndim1 = ndim();
         size_t ndim2 = other.ndim();
         size_t max_ndim = std::max(ndim1, ndim2);
@@ -115,8 +115,8 @@ public:
      * @return The resulting broadcast shape
      * @throws std::invalid_argument if shapes are not broadcastable
      */
-    Shape broadcast_with(const Shape& other) const {
-        if (!is_broadcastable_with(other)) {
+    [[nodiscard]] Shape broadcastWith(const Shape& other) const {
+        if (!isBroadcastableWith(other)) {
             throw std::invalid_argument("Shapes are not broadcastable");
         }
 
@@ -140,7 +140,7 @@ public:
      * @brief Returns the underlying dimensions vector
      * @return Vector of dimensions
      */
-    const std::vector<size_t>& dims() const { return dims_; }
+    [[nodiscard]] const std::vector<size_t>& dims() const { return dims_; }
 
 private:
     std::vector<size_t> dims_;
@@ -182,14 +182,14 @@ public:
      * @brief Returns the number of dimensions
      * @return Number of dimensions
      */
-    size_t ndim() const { return strides_.size(); }
+    [[nodiscard]] size_t ndim() const { return strides_.size(); }
 
     /**
      * @brief Access stride at index (no bounds checking)
      * @param index Dimension index
      * @return Stride value
      */
-    size_t operator[](size_t index) const { return strides_[index]; }
+    [[nodiscard]] size_t operator[](size_t index) const { return strides_[index]; }
 
     /**
      * @brief Computes the linear offset for a given multidimensional index
@@ -197,7 +197,7 @@ public:
      * @param indices Multidimensional indices
      * @return Linear offset in memory
      */
-    size_t offset(const std::vector<size_t>& indices) const {
+    [[nodiscard]] size_t offset(const std::vector<size_t>& indices) const {
         size_t result = 0;
         for (size_t i = 0; i < indices.size(); ++i) {
             result += indices[i] * strides_[i];
@@ -213,7 +213,7 @@ public:
      * @param shape The shape to check against
      * @return True if contiguous
      */
-    bool is_contiguous(const Shape& shape) const {
+    [[nodiscard]] bool isContiguous(const Shape& shape) const {
         if (ndim() != shape.ndim()) {
             return false;
         }
@@ -237,7 +237,7 @@ public:
      * @brief Returns the underlying strides vector
      * @return Vector of stride values
      */
-    const std::vector<size_t>& strides() const { return strides_; }
+    [[nodiscard]] const std::vector<size_t>& strides() const { return strides_; }
 
 private:
     std::vector<size_t> strides_;

@@ -110,7 +110,7 @@ done
 
 cd "$PROJECT_ROOT"
 
-print_section "FullScratchML Build Configuration"
+print_section "GradFlow Build Configuration"
 echo "Build Type:        $BUILD_TYPE"
 echo "Build Tests:       $BUILD_TESTS"
 echo "Build Examples:    $BUILD_EXAMPLES"

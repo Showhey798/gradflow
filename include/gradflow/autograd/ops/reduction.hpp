@@ -22,8 +22,8 @@ Tensor<T> sum(const Tensor<T>& a) {
     Tensor<T> result(Shape({}));  // Scalar
     T sum_value = T(0);
 
-    detail::iterate_indices(a.shape(),
-                            [&](const std::vector<size_t>& indices) { sum_value += a[indices]; });
+    detail::iterateIndices(a.shape(),
+                           [&](const std::vector<size_t>& indices) { sum_value += a[indices]; });
 
     result[{}] = sum_value;
     return result;
@@ -56,11 +56,11 @@ Tensor<T> sum(const Tensor<T>& a, size_t axis) {
     Tensor<T> result(result_shape);
 
     // Initialize result to zero
-    detail::iterate_indices(result_shape,
-                            [&](const std::vector<size_t>& indices) { result[indices] = T(0); });
+    detail::iterateIndices(result_shape,
+                           [&](const std::vector<size_t>& indices) { result[indices] = T(0); });
 
     // Sum over the specified axis
-    detail::iterate_indices(a.shape(), [&](const std::vector<size_t>& a_indices) {
+    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& a_indices) {
         // Create result indices by removing the axis dimension
         std::vector<size_t> result_indices;
         for (size_t i = 0; i < a.ndim(); ++i) {
@@ -106,8 +106,8 @@ Tensor<T> mean(const Tensor<T>& a, size_t axis) {
     Tensor<T> result = sum(a, axis);
     T divisor = static_cast<T>(a.shape()[axis]);
 
-    detail::iterate_indices(
-        result.shape(), [&](const std::vector<size_t>& indices) { result[indices] /= divisor; });
+    detail::iterateIndices(result.shape(),
+                           [&](const std::vector<size_t>& indices) { result[indices] /= divisor; });
 
     return result;
 }
@@ -128,7 +128,7 @@ Tensor<T> max(const Tensor<T>& a) {
     Tensor<T> result(Shape({}));
     T max_value = std::numeric_limits<T>::lowest();
 
-    detail::iterate_indices(a.shape(), [&](const std::vector<size_t>& indices) {
+    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
         max_value = std::max(max_value, a[indices]);
     });
 
@@ -163,12 +163,12 @@ Tensor<T> max(const Tensor<T>& a, size_t axis) {
     Tensor<T> result(result_shape);
 
     // Initialize result to lowest value
-    detail::iterate_indices(result_shape, [&](const std::vector<size_t>& indices) {
+    detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
         result[indices] = std::numeric_limits<T>::lowest();
     });
 
     // Find max over the specified axis
-    detail::iterate_indices(a.shape(), [&](const std::vector<size_t>& a_indices) {
+    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& a_indices) {
         std::vector<size_t> result_indices;
         for (size_t i = 0; i < a.ndim(); ++i) {
             if (i != axis) {
@@ -197,7 +197,7 @@ Tensor<T> min(const Tensor<T>& a) {
     Tensor<T> result(Shape({}));
     T min_value = std::numeric_limits<T>::max();
 
-    detail::iterate_indices(a.shape(), [&](const std::vector<size_t>& indices) {
+    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
         min_value = std::min(min_value, a[indices]);
     });
 
@@ -232,12 +232,12 @@ Tensor<T> min(const Tensor<T>& a, size_t axis) {
     Tensor<T> result(result_shape);
 
     // Initialize result to max value
-    detail::iterate_indices(result_shape, [&](const std::vector<size_t>& indices) {
+    detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
         result[indices] = std::numeric_limits<T>::max();
     });
 
     // Find min over the specified axis
-    detail::iterate_indices(a.shape(), [&](const std::vector<size_t>& a_indices) {
+    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& a_indices) {
         std::vector<size_t> result_indices;
         for (size_t i = 0; i < a.ndim(); ++i) {
             if (i != axis) {

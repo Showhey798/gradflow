@@ -31,7 +31,7 @@ TEST_F(TensorTest, ConstructionWithShape) {
     EXPECT_EQ(t.ndim(), 2);
     EXPECT_EQ(t.size(), 6);
     EXPECT_NE(t.data(), nullptr);
-    EXPECT_TRUE(t.is_contiguous());
+    EXPECT_TRUE(t.isContiguous());
 }
 
 TEST_F(TensorTest, ConstructionFromInitializerList1D) {
@@ -125,7 +125,9 @@ TEST_F(TensorTest, ElementAccessOutOfBounds) {
 
 TEST_F(TensorTest, ReshapeContiguous) {
     const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
-    EXPECT_TRUE(kT.is_contiguous());
+
+
+    EXPECT_TRUE(kT.isContiguous());
 
     auto reshaped = kT.reshape(Shape({2, 3}));
 
@@ -134,18 +136,19 @@ TEST_F(TensorTest, ReshapeContiguous) {
     EXPECT_FLOAT_EQ((reshaped[{0, 0}]), 1.0F);
     EXPECT_FLOAT_EQ((reshaped[{0, 1}]), 2.0F);
     EXPECT_FLOAT_EQ((reshaped[{1, 2}]), 6.0F);
-    EXPECT_TRUE(reshaped.is_contiguous());
+
+    EXPECT_TRUE(reshaped.isContiguous());
 }
 
 TEST_F(TensorTest, ReshapeNonContiguous) {
     Tensor<float> t({{1.0F, 2.0F, 3.0F}, {4.0F, 5.0F, 6.0F}});
     auto transposed = t.transpose(0, 1);
-    EXPECT_FALSE(transposed.is_contiguous());
+    EXPECT_FALSE(transposed.isContiguous());
 
     auto reshaped = transposed.reshape(Shape({6}));
 
     EXPECT_EQ(reshaped.shape(), Shape({6}));
-    EXPECT_TRUE(reshaped.is_contiguous());
+    EXPECT_TRUE(reshaped.isContiguous());
 }
 
 TEST_F(TensorTest, ReshapeSizeMismatch) {
@@ -156,7 +159,7 @@ TEST_F(TensorTest, ReshapeSizeMismatch) {
 
 TEST_F(TensorTest, ViewContiguous) {
     const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
-    EXPECT_TRUE(kT.is_contiguous());
+    EXPECT_TRUE(kT.isContiguous());
 
     auto viewed = kT.view(Shape({3, 2}));
 
@@ -173,7 +176,7 @@ TEST_F(TensorTest, ViewContiguous) {
 TEST_F(TensorTest, ViewNonContiguous) {
     Tensor<float> t({{1.0F, 2.0F}, {3.0F, 4.0F}});
     auto transposed = t.transpose(0, 1);
-    EXPECT_FALSE(transposed.is_contiguous());
+    EXPECT_FALSE(transposed.isContiguous());
 
     EXPECT_THROW(transposed.view(Shape({4})), std::invalid_argument);
 }
@@ -196,7 +199,7 @@ TEST_F(TensorTest, Transpose2D) {
     EXPECT_FLOAT_EQ((transposed[{2, 1}]), 6.0F);
 
     // Transposed view is not contiguous
-    EXPECT_FALSE(transposed.is_contiguous());
+    EXPECT_FALSE(transposed.isContiguous());
 }
 
 TEST_F(TensorTest, TransposeZeroCopy) {
@@ -337,49 +340,50 @@ TEST_F(TensorTest, SliceZeroCopyVerification) {
 TEST_F(TensorTest, ContiguousCheck) {
     // Newly created tensor is contiguous
     const Tensor<float> kT1({1.0F, 2.0F, 3.0F, 4.0F});
-    EXPECT_TRUE(kT1.is_contiguous());
+    EXPECT_TRUE(kT1.isContiguous());
 
     // View is contiguous
     auto viewed = kT1.view(Shape({2, 2}));
-    EXPECT_TRUE(viewed.is_contiguous());
+    EXPECT_TRUE(viewed.isContiguous());
 
     // Transposed tensor is not contiguous
     Tensor<float> t2({{1.0F, 2.0F}, {3.0F, 4.0F}});
     auto transposed = t2.transpose(0, 1);
-    EXPECT_FALSE(transposed.is_contiguous());
+    EXPECT_FALSE(transposed.isContiguous());
 
     // Sliced tensor may not be contiguous
     Tensor<float> t3({{1.0F, 2.0F, 3.0F}, {4.0F, 5.0F, 6.0F}});
     auto col_slice = t3.slice(1, 0, 2);
-    EXPECT_FALSE(col_slice.is_contiguous());
+    EXPECT_FALSE(col_slice.isContiguous());
 }
 
 TEST_F(TensorTest, ContiguousOperation) {
     Tensor<float> t({{1.0F, 2.0F, 3.0F}, {4.0F, 5.0F, 6.0F}});
     auto transposed = t.transpose(0, 1);
-    EXPECT_FALSE(transposed.is_contiguous());
+    EXPECT_FALSE(transposed.isContiguous());
 
     // Make it contiguous
     auto contiguous = transposed.contiguous();
 
-    EXPECT_TRUE(contiguous.is_contiguous());
+    EXPECT_TRUE(contiguous.isContiguous());
     EXPECT_EQ(contiguous.shape(), Shape({3, 2}));
     EXPECT_FLOAT_EQ((contiguous[{0, 0}]), 1.0F);
     EXPECT_FLOAT_EQ((contiguous[{0, 1}]), 4.0F);
     EXPECT_FLOAT_EQ((contiguous[{2, 1}]), 6.0F);
 
     // Original should not be affected
-    EXPECT_FALSE(transposed.is_contiguous());
+    EXPECT_FALSE(transposed.isContiguous());
 }
 
 TEST_F(TensorTest, ContiguousAlreadyContiguous) {
     const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F});
-    EXPECT_TRUE(kT.is_contiguous());
+
+    EXPECT_TRUE(kT.isContiguous());
 
     auto contiguous = kT.contiguous();
 
     // Should return a copy
-    EXPECT_TRUE(contiguous.is_contiguous());
+    EXPECT_TRUE(contiguous.isContiguous());
     EXPECT_EQ(contiguous.size(), 4);
 }
 
@@ -467,7 +471,7 @@ TEST_F(TensorTest, FactoryEye) {
 TEST_F(TensorTest, FactoryZerosLike) {
     Tensor<float> t({{1.0F, 2.0F}, {3.0F, 4.0F}});
 
-    auto zeros = Tensor<float>::zeros_like(t);
+    auto zeros = Tensor<float>::zerosLike(t);
 
     EXPECT_EQ(zeros.shape(), t.shape());
     EXPECT_EQ(zeros.device(), t.device());
@@ -478,7 +482,7 @@ TEST_F(TensorTest, FactoryZerosLike) {
 TEST_F(TensorTest, FactoryOnesLike) {
     Tensor<float> t({{1.0F, 2.0F}, {3.0F, 4.0F}});
 
-    auto ones = Tensor<float>::ones_like(t);
+    auto ones = Tensor<float>::onesLike(t);
 
     EXPECT_EQ(ones.shape(), t.shape());
     EXPECT_EQ(ones.device(), t.device());
