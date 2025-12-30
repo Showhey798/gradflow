@@ -74,6 +74,9 @@ fullscratch_add_test(ops_test SOURCES test_ops.cpp)
 # Device tests
 fullscratch_add_test(device_test SOURCES test_device.cpp)
 
+# Operation tests
+fullscratch_add_test(operation_test SOURCES test_operation.cpp)
+
 # Phase 1 integration tests
 fullscratch_add_test(phase1_integration_test SOURCES
                      test_phase1_integration.cpp)
@@ -117,6 +120,7 @@ add_custom_target(
           optimizer_test
           ops_test
           device_test
+          operation_test
           phase1_integration_test
           # matrix_test vector_test activation_test loss_test
           # neural_network_test data_loader_test
