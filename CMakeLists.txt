@@ -89,13 +89,13 @@ endif()
 
 # Code Coverage (only for Debug builds)
 if(GRADFLOW_ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        add_compile_options(--coverage)
-        add_link_options(--coverage)
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        add_compile_options(-fprofile-instr-generate -fcoverage-mapping)
-        add_link_options(-fprofile-instr-generate -fcoverage-mapping)
-    endif()
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(--coverage)
+    add_link_options(--coverage)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-fprofile-instr-generate -fcoverage-mapping)
+    add_link_options(-fprofile-instr-generate -fcoverage-mapping)
+  endif()
 endif()
 
 # ========================================
@@ -103,11 +103,9 @@ endif()
 # ========================================
 
 add_library(fullscratch INTERFACE)
-target_include_directories(fullscratch
-    INTERFACE
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
-)
+target_include_directories(
+  fullscratch INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                        $<INSTALL_INTERFACE:include>)
 target_compile_features(fullscratch INTERFACE cxx_std_17)
 
 # Link dependencies
