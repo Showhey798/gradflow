@@ -125,6 +125,8 @@ TEST_F(TensorTest, ElementAccessOutOfBounds) {
 
 TEST_F(TensorTest, ReshapeContiguous) {
     const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
+
+
     EXPECT_TRUE(kT.isContiguous());
 
     auto reshaped = kT.reshape(Shape({2, 3}));
@@ -134,6 +136,7 @@ TEST_F(TensorTest, ReshapeContiguous) {
     EXPECT_FLOAT_EQ((reshaped[{0, 0}]), 1.0F);
     EXPECT_FLOAT_EQ((reshaped[{0, 1}]), 2.0F);
     EXPECT_FLOAT_EQ((reshaped[{1, 2}]), 6.0F);
+
     EXPECT_TRUE(reshaped.isContiguous());
 }
 
@@ -374,6 +377,7 @@ TEST_F(TensorTest, ContiguousOperation) {
 
 TEST_F(TensorTest, ContiguousAlreadyContiguous) {
     const Tensor<float> kT({1.0F, 2.0F, 3.0F, 4.0F});
+
     EXPECT_TRUE(kT.isContiguous());
 
     auto contiguous = kT.contiguous();
