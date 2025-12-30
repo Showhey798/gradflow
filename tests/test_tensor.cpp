@@ -24,7 +24,7 @@ TEST_F(TensorTest, ConstructionDefault) {
 }
 
 TEST_F(TensorTest, ConstructionWithShape) {
-    const Shape shape({2, 3})
+    const Shape shape({2, 3});
     Tensor<float> t(shape);
 
     EXPECT_EQ(t.shape(), shape);
@@ -60,8 +60,8 @@ TEST_F(TensorTest, ConstructionFromInitializerList2D) {
 }
 
 TEST_F(TensorTest, ConstructionFromShapeAndData) {
-    const Shape shape({2, 3})
-    const std::vector<float> data = {1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F}
+    const Shape shape({2, 3});
+    const std::vector<float> data = {1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F};
     Tensor<float> t(shape, data);
 
     EXPECT_EQ(t.shape(), shape);
@@ -71,7 +71,7 @@ TEST_F(TensorTest, ConstructionFromShapeAndData) {
 }
 
 TEST_F(TensorTest, ConstructionFromShapeAndDataMismatch) {
-    const Shape shape({2, 3})
+    const Shape shape({2, 3});
     const std::vector<float> data = {1.0F, 2.0F}  // Wrong size
 
     EXPECT_THROW(Tensor<float> t(shape, data), std::invalid_argument);
