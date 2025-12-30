@@ -82,6 +82,9 @@ fullscratch_add_test(device_test SOURCES test_device.cpp)
 # Operation tests
 fullscratch_add_test(operation_test SOURCES test_operation.cpp)
 
+# Variable tests
+fullscratch_add_test(variable_test SOURCES test_variable.cpp)
+
 # Phase 1 integration tests Set longer timeout (300s) to accommodate sanitizer
 # overhead Sanitizers can add 10-50x overhead, especially for large scale
 # operations
@@ -128,6 +131,7 @@ add_custom_target(
           ops_test
           device_test
           operation_test
+          variable_test
           phase1_integration_test
           # matrix_test vector_test activation_test loss_test
           # neural_network_test data_loader_test
