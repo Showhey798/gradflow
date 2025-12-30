@@ -81,6 +81,13 @@ fullscratch_add_test(operation_test SOURCES test_operation.cpp)
 fullscratch_add_test(phase1_integration_test SOURCES
                      test_phase1_integration.cpp)
 
+# Set longer timeout for Phase1IntegrationTest to accommodate sanitizer overhead
+# Sanitizers can add 10-50x overhead, especially for large scale operations
+set_tests_properties(
+  phase1_integration_test PROPERTIES TIMEOUT 300 # 5 minutes (increased from
+                                                 # default 60 seconds)
+)
+
 # TODO: Implement these tests # Matrix operations tests
 # fullscratch_add_test(matrix_test SOURCES test_matrix.cpp )
 #
