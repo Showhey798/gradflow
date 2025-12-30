@@ -24,11 +24,33 @@ env:
   CONAN_VERSION: 2.0.17
 
 jobs:
+  check-bindings:
+    name: Check Python bindings implementation
+    runs-on: ubuntu-latest
+    outputs:
+      implemented: ${{ steps.check.outputs.implemented }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+    - name: Check if Python bindings are implemented
+      id: check
+      run: |
+        # Check for binding source files or directory
+        if [ -d "python/src" ] || [ -f "python/src/bindings.cpp" ]; then
+          echo "implemented=true" >> $GITHUB_OUTPUT
+          echo "✅ Python bindings source files found - will run full test suite"
+        else
+          echo "implemented=false" >> $GITHUB_OUTPUT
+          echo "⏭️  Python bindings not yet implemented - will skip build and tests (linting only)"
+        fi
+      shell: bash
+
   python-bindings:
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    # Allow this job to fail until Python bindings are fully implemented
-    continue-on-error: true
+    needs: check-bindings
 
     strategy:
       fail-fast: false
@@ -48,18 +70,18 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install system dependencies (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-latest' && needs.check-bindings.outputs.implemented == 'true'
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake ninja-build
 
     - name: Install system dependencies (macOS)
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-latest' && needs.check-bindings.outputs.implemented == 'true'
       run: |
         brew install cmake ninja
 
     - name: Install system dependencies (Windows)
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'windows-latest' && needs.check-bindings.outputs.implemented == 'true'
       run: |
         choco install cmake ninja -y
 
@@ -75,6 +97,7 @@ jobs:
         uv pip install --system -e ".[dev]"
 
     - name: Configure Conan
+      if: needs.check-bindings.outputs.implemented == 'true'
       run: |
         conan profile detect --force
         conan install . \
@@ -83,60 +106,43 @@ jobs:
           --settings=build_type=Release
 
     - name: Build Python bindings (Unix)
-      if: matrix.os != 'windows-latest'
-      continue-on-error: true
+      if: matrix.os != 'windows-latest' && needs.check-bindings.outputs.implemented == 'true'
       run: |
-        # Try to build Python bindings if CMake option exists
-        if cmake -B build \
+        cmake -B build \
           -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
           -DGRADFLOW_BUILD_PYTHON=ON \
           -DGRADFLOW_BUILD_TESTS=OFF \
-          -DPython_EXECUTABLE=$(which python) 2>/dev/null; then
-          cmake --build build --config Release --parallel || echo "Build failed (expected until bindings are implemented)"
-        else
-          echo "CMake configuration does not support Python bindings yet"
-        fi
+          -DPython_EXECUTABLE=$(which python)
+        cmake --build build --config Release --parallel
 
     - name: Build Python bindings (Windows)
-      if: matrix.os == 'windows-latest'
-      continue-on-error: true
+      if: matrix.os == 'windows-latest' && needs.check-bindings.outputs.implemented == 'true'
       run: |
-        # Try to build Python bindings if CMake option exists
-        if (cmake -B build `
+        cmake -B build `
           -G Ninja `
           -DCMAKE_BUILD_TYPE=Release `
           -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake `
           -DGRADFLOW_BUILD_PYTHON=ON `
           -DGRADFLOW_BUILD_TESTS=OFF `
-          -DPython_EXECUTABLE=$(python -c "import sys; print(sys.executable)") 2>$null) {
-          cmake --build build --config Release --parallel
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "Build failed (expected until bindings are implemented)"
-          }
-        } else {
-          Write-Host "CMake configuration does not support Python bindings yet"
-        }
+          -DPython_EXECUTABLE=$(python -c "import sys; print(sys.executable)")
+        cmake --build build --config Release --parallel
 
     - name: Install Python package
-      continue-on-error: true
+      if: needs.check-bindings.outputs.implemented == 'true'
       run: |
-        # Install in development mode with dev dependencies
-        pip install -e python/[dev] || echo "Installation failed (expected until package is complete)"
+        pip install -e python/[dev]
 
     - name: Run Python tests
-      # Allow tests to fail until bindings are complete
-      continue-on-error: true
+      if: needs.check-bindings.outputs.implemented == 'true'
       run: |
-        # Run tests without coverage until bindings are implemented
-        pytest python/tests -v || echo "Tests failed (expected until bindings are complete)"
+        pytest python/tests -v --cov=gradflow --cov-report=xml --cov-report=html --cov-report=term
 
     - name: Run Python type checking
-      # Allow type checking to fail until bindings are complete
-      continue-on-error: true
+      if: needs.check-bindings.outputs.implemented == 'true'
       run: |
-        pyright python || echo "Type checking failed (expected until bindings are complete)"
+        pyright python
 
     - name: Run Python linting and formatting
       # Linting should pass even without bindings
@@ -145,8 +151,7 @@ jobs:
         ruff check python
 
     - name: Upload coverage to Codecov
-      # Skip until coverage is enabled
-      if: false && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      if: needs.check-bindings.outputs.implemented == 'true' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
       uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4
       with:
         files: ./coverage.xml
@@ -155,8 +160,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Upload test results
-      # Skip until coverage and test reports are generated
-      if: false
+      if: needs.check-bindings.outputs.implemented == 'true' && always()
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: pytest-results-${{ matrix.os }}-py${{ matrix.python-version }}
@@ -166,11 +170,10 @@ jobs:
         retention-days: 7
 
   build-wheels:
-    # Temporarily disabled until Python bindings are implemented
-    if: false
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    needs: python-bindings
+    needs: [check-bindings, python-bindings]
+    if: needs.check-bindings.outputs.implemented == 'true'
 
     strategy:
       matrix:
@@ -215,11 +218,10 @@ jobs:
         retention-days: 7
 
   test-import:
-    # Temporarily disabled until Python bindings are implemented
-    if: false
     name: Test package import
     runs-on: ${{ matrix.os }}
-    needs: build-wheels
+    needs: [check-bindings, build-wheels]
+    if: needs.check-bindings.outputs.implemented == 'true'
 
     strategy:
       matrix:
@@ -255,12 +257,10 @@ jobs:
         python -c "import gradflow; print(f'Available backends: {gradflow.available_backends()}')"
 
   publish-test-pypi:
-    # Temporarily disabled until Python bindings are implemented
-    if: false
     name: Publish to Test PyPI
     runs-on: ubuntu-latest
-    needs: [python-bindings, build-wheels]
-    # Original condition: if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [check-bindings, python-bindings, build-wheels]
+    if: needs.check-bindings.outputs.implemented == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
     - name: Download all wheels
@@ -278,10 +278,10 @@ jobs:
         skip-existing: true
 
   python-documentation:
-    # Temporarily disabled until Python bindings are implemented
-    if: false
     name: Build Python Documentation
     runs-on: ubuntu-latest
+    needs: check-bindings
+    if: needs.check-bindings.outputs.implemented == 'true'
 
     steps:
     - name: Checkout code

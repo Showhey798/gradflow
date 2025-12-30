@@ -4,6 +4,11 @@
 
 このドキュメントは、GitHub Actions ワークフローでスキップされていたテストとチェックを有効化する作業の記録です。
 
+## 更新履歴
+
+- **2025-12-30（初版）**: CI の段階的有効化（`continue-on-error: true` を使用）
+- **2025-12-30（改訂版）**: バインディング実装状態による条件分岐アプローチに変更
+
 ## 実施日
 
 2025-12-30
@@ -65,35 +70,41 @@
 - パッケージのメタデータ追加（`__version__`, `__author__`）
 - docstring の追加
 
-### 2. CI ワークフローの修正
+### 2. CI ワークフローの修正（改訂版）
 
 #### `python_tests.yml`
 
-**段階的な有効化アプローチ**:
+**バインディング実装状態による条件分岐アプローチ**:
 
-1. **`python-bindings` ジョブ**:
-   - `if: false` を削除
-   - `continue-on-error: true` を追加（バインディング完成まで失敗を許容）
+1. **新規ジョブ `check-bindings` の追加**:
+   - Python バインディングのソースファイル存在をチェック
+   - チェック対象: `python/src/` ディレクトリまたは `python/src/bindings.cpp` ファイル
+   - 結果を `outputs.implemented` として他のジョブに提供
 
-2. **ビルドステップの調整**:
-   - Unix/Windows 両方でエラーハンドリングを追加
-   - CMake オプションが存在しない場合の適切なメッセージ表示
+2. **`python-bindings` ジョブの修正**:
+   - `check-bindings` ジョブに依存
+   - `continue-on-error` を削除（条件分岐で制御）
+   - システム依存関係インストール: バインディング実装時のみ実行
+   - Conan 設定: バインディング実装時のみ実行
+   - ビルドステップ: バインディング実装時のみ実行（エラーハンドリング簡素化）
+   - パッケージインストール: バインディング実装時のみ実行
+   - テスト実行: バインディング実装時のみ実行（coverage 有効）
+   - 型チェック: バインディング実装時のみ実行
+   - **lint/format チェック**: 常に実行（バインディング不要）
+   - codecov アップロード: バインディング実装時のみ実行
+   - アーティファクトアップロード: バインディング実装時のみ実行
 
-3. **テストステップの調整**:
-   - coverage を一時的に無効化
-   - テスト失敗を許容（`continue-on-error: true`）
-   - 型チェック失敗を許容
-   - lint/format チェックは厳格に実行
+3. **後続ジョブの状態**:
+   - `build-wheels`: バインディング実装時のみ実行（`if: needs.check-bindings.outputs.implemented == 'true'`）
+   - `test-import`: バインディング実装時のみ実行
+   - `publish-test-pypi`: バインディング実装時かつ main ブランチへの push 時のみ実行
+   - `python-documentation`: バインディング実装時のみ実行
 
-4. **アーティファクトアップロード**:
-   - codecov アップロードを一時的に無効化（`if: false`）
-   - テスト結果アップロードを一時的に無効化
-
-5. **後続ジョブの状態**:
-   - `build-wheels`: 引き続き無効（`if: false`）- バインディング完成後に有効化
-   - `test-import`: 引き続き無効（`if: false`）
-   - `publish-test-pypi`: 引き続き無効（`if: false`）
-   - `python-documentation`: 引き続き無効（`if: false`）- Sphinx セットアップ後に有効化
+4. **メリット**:
+   - ✅ バインディング未実装時は不要なステップをスキップし、CI 実行時間を短縮
+   - ✅ バインディング実装時は厳格なテストを実行（`continue-on-error` 不要）
+   - ✅ lint/format は常に実行され、コード品質を維持
+   - ✅ 実装の進捗に応じて自動的に完全な CI に移行
 
 #### `ci.yml`
 
@@ -168,7 +179,7 @@ pyright
 
 1. **最小権限の原則**: `permissions: contents: read`
 2. **SHA 固定**: GitHub Actions は SHA でバージョン固定済み
-3. **エラーハンドリング**: 適切な `continue-on-error` の使用
+3. **条件分岐による効率化**: バインディング未実装時は不要なステップをスキップ
 4. **スクリプト化**: CI ロジックをスクリプトに抽出
 5. **Local-CI Parity**: ローカルと CI で同じチェックを実行可能
 
@@ -178,30 +189,26 @@ pyright
 - ✅ テストディレクトリ構造の作成
 - ✅ 基本的なテストファイルの作成
 - ✅ pyproject.toml の設定
-- ✅ CI ワークフローの段階的有効化
+- ✅ CI ワークフローの条件分岐による最適化
 - ✅ ローカル検証スクリプトの作成
 
 ### Phase 2: Python バインディング実装（次のフェーズ）
-1. C++ コードの Python バインディング実装（pybind11 使用）
-2. CMake に `GRADFLOW_BUILD_PYTHON` オプション追加
-3. バインディングテストの追加
-4. `continue-on-error: true` の削除
+1. `python/src/` ディレクトリの作成
+2. C++ コードの Python バインディング実装（pybind11 使用）
+3. CMake に `GRADFLOW_BUILD_PYTHON` オプション追加
+4. バインディングテストの追加
+5. **ファイル作成後、CI が自動的に完全なテストを実行**
 
-### Phase 3: パッケージング（バインディング完成後）
-1. `build-wheels` ジョブの有効化（`if: false` 削除）
-2. `test-import` ジョブの有効化
-3. cibuildwheel の設定検証
-4. マルチプラットフォームビルドのテスト
+### Phase 3: パッケージング（自動有効化）
+- バインディング実装後、以下のジョブが自動的に有効化:
+  - `build-wheels`: wheel のビルド
+  - `test-import`: インポートテスト
+  - `python-documentation`: ドキュメント生成
 
-### Phase 4: ドキュメント（任意）
-1. Sphinx のセットアップ
-2. `python-documentation` ジョブの有効化
-3. GitHub Pages へのデプロイ設定
-
-### Phase 5: 公開（プロダクション準備完了後）
-1. `publish-test-pypi` ジョブの有効化とテスト
-2. Test PyPI での検証
-3. PyPI への公開設定
+### Phase 4: 公開（main ブランチへの push 時）
+- バインディング実装後、main ブランチへの push で自動的に:
+  - `publish-test-pypi`: Test PyPI への公開
+  - 将来的に PyPI への公開も設定可能
 
 ## 変更されたファイル一覧
 
@@ -224,29 +231,37 @@ pyright
 
 ## 注意事項
 
-### 現在の制限事項:
+### 現在の動作:
 
-1. **Python バインディング未実装**:
-   - ビルドは失敗する可能性あり（`continue-on-error: true` で許容）
-   - インポートテストは失敗する（想定内）
+**バインディング未実装時（現状）**:
+- ✅ `check-bindings` ジョブが実行され、実装状態をチェック
+- ✅ `python-bindings` ジョブが実行される
+- ⏭️  ビルド・テスト関連ステップはスキップされる
+- ✅ lint/format チェックは常に実行される
+- ⏭️  `build-wheels`、`test-import`、`publish-test-pypi`、`python-documentation` ジョブはスキップされる
+- ✅ CI 全体は成功する
 
-2. **Coverage 無効**:
-   - バインディング実装後に有効化予定
-   - codecov アップロードは一時停止中
+**バインディング実装後（`python/src/` または `python/src/bindings.cpp` 作成後）**:
+- ✅ すべてのステップが自動的に有効化される
+- ✅ ビルド・テスト・型チェックが厳格に実行される
+- ✅ coverage が有効化され、codecov にアップロードされる
+- ✅ wheel がビルドされ、テストされる
+- ✅ main ブランチへの push 時に Test PyPI に公開される
 
-3. **Wheel ビルド無効**:
-   - バインディング完成後に有効化予定
-   - cibuildwheel 設定は準備済み
+### バインディング実装を開始するには:
 
-### CI の挙動:
-
-- ✅ Python バインディングジョブは実行される
-- ⚠️ ビルド/テストは失敗する可能性がある（許容済み）
-- ✅ lint/format チェックは厳格に実行される
-- ✅ CI 全体は失敗しない（`continue-on-error: true`）
+1. `python/src/` ディレクトリを作成
+2. `python/src/bindings.cpp` などのバインディングファイルを追加
+3. コミット＆プッシュ
+4. CI が自動的に完全なテストスイートを実行
 
 ## 結論
 
-スキップされていた Python テストを段階的に有効化し、バインディングの実装状況に応じた柔軟な CI 設定を実現しました。ローカルでの検証環境も整備し、Local-CI Parity の原則を維持しています。
+バインディング実装状態による条件分岐アプローチを採用し、以下を実現しました：
 
-今後は Phase 2（Python バインディング実装）に進み、完全な CI/CD パイプラインを構築していきます。
+- **効率性**: バインディング未実装時は不要なステップをスキップし、CI 実行時間を短縮
+- **自動化**: バインディング実装後、CI が自動的に完全なテストを実行
+- **保守性**: `continue-on-error` を使用せず、明確な条件分岐で制御
+- **品質保証**: lint/format は常に実行され、コード品質を維持
+
+今後は Phase 2（Python バインディング実装）に進み、`python/src/` ディレクトリにファイルを追加するだけで、完全な CI/CD パイプラインが自動的に有効化されます。
