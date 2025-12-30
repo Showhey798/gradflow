@@ -106,8 +106,8 @@ Tensor<T> mean(const Tensor<T>& a, size_t axis) {
     Tensor<T> result = sum(a, axis);
     T divisor = static_cast<T>(a.shape()[axis]);
 
-    detail::iterateIndices(
-        result.shape(), [&](const std::vector<size_t>& indices) { result[indices] /= divisor; });
+    detail::iterateIndices(result.shape(),
+                           [&](const std::vector<size_t>& indices) { result[indices] /= divisor; });
 
     return result;
 }
