@@ -45,7 +45,7 @@ TEST(ShapeTest, ElementAccess) {
     EXPECT_EQ(shape.at(2), 4);
 
     // Test out of bounds
-    EXPECT_THROW(shape.at(3), std::out_of_range);
+    EXPECT_THROW({ (void)shape.at(3); }, std::out_of_range);
 }
 
 TEST(ShapeTest, Equality) {
@@ -67,49 +67,49 @@ TEST(ShapeTest, BroadcastCompatibility) {
     // Compatible shapes
     Shape shape1({3, 1, 4});
     Shape shape2({1, 2, 4});
-    EXPECT_TRUE(shape1.is_broadcastable_with(shape2));
+    EXPECT_TRUE(shape1.isBroadcastableWith(shape2));
 
     // Same shape is always compatible
     Shape shape3({2, 3, 4});
     Shape shape4({2, 3, 4});
-    EXPECT_TRUE(shape3.is_broadcastable_with(shape4));
+    EXPECT_TRUE(shape3.isBroadcastableWith(shape4));
 
     // Scalar (empty shape) is compatible with any shape
     Shape scalar;
     Shape shape5({2, 3, 4});
-    EXPECT_TRUE(scalar.is_broadcastable_with(shape5));
-    EXPECT_TRUE(shape5.is_broadcastable_with(scalar));
+    EXPECT_TRUE(scalar.isBroadcastableWith(shape5));
+    EXPECT_TRUE(shape5.isBroadcastableWith(scalar));
 
     // Incompatible shapes
     Shape shape6({3, 2, 4});
     Shape shape7({2, 3, 4});
-    EXPECT_FALSE(shape6.is_broadcastable_with(shape7));
+    EXPECT_FALSE(shape6.isBroadcastableWith(shape7));
 }
 
 TEST(ShapeTest, BroadcastShape) {
     // Test broadcasting result shape
     Shape shape1({3, 1, 4});
     Shape shape2({1, 2, 4});
-    Shape result = shape1.broadcast_with(shape2);
+    Shape result = shape1.broadcastWith(shape2);
     EXPECT_EQ(result, Shape({3, 2, 4}));
 
     // Broadcasting with scalar
     Shape scalar;
     Shape shape3({2, 3, 4});
-    Shape result2 = scalar.broadcast_with(shape3);
+    Shape result2 = scalar.broadcastWith(shape3);
     EXPECT_EQ(result2, shape3);
 
     // Broadcasting with different ndim
     Shape shape4({4});
     Shape shape5({2, 3, 4});
-    Shape result3 = shape4.broadcast_with(shape5);
+    Shape result3 = shape4.broadcastWith(shape5);
     EXPECT_EQ(result3, Shape({2, 3, 4}));
 }
 
 TEST(ShapeTest, BroadcastIncompatible) {
     Shape shape1({3, 2, 4});
     Shape shape2({2, 3, 4});
-    EXPECT_THROW(shape1.broadcast_with(shape2), std::invalid_argument);
+    EXPECT_THROW({ (void)shape1.broadcastWith(shape2); }, std::invalid_argument);
 }
 
 // ========================================

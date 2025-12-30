@@ -14,29 +14,29 @@ TEST(DeviceTest, Construction) {
     Device cpu_device(DeviceType::CPU, 0);
     EXPECT_EQ(cpu_device.type(), DeviceType::CPU);
     EXPECT_EQ(cpu_device.index(), 0);
-    EXPECT_TRUE(cpu_device.is_cpu());
-    EXPECT_FALSE(cpu_device.is_cuda());
-    EXPECT_FALSE(cpu_device.is_metal());
+    EXPECT_TRUE(cpu_device.isCpu());
+    EXPECT_FALSE(cpu_device.isCuda());
+    EXPECT_FALSE(cpu_device.isMetal());
 
     Device cuda_device(DeviceType::CUDA, 1);
     EXPECT_EQ(cuda_device.type(), DeviceType::CUDA);
     EXPECT_EQ(cuda_device.index(), 1);
-    EXPECT_FALSE(cuda_device.is_cpu());
-    EXPECT_TRUE(cuda_device.is_cuda());
-    EXPECT_FALSE(cuda_device.is_metal());
+    EXPECT_FALSE(cuda_device.isCpu());
+    EXPECT_TRUE(cuda_device.isCuda());
+    EXPECT_FALSE(cuda_device.isMetal());
 }
 
 TEST(DeviceTest, FactoryFunctions) {
     Device cpu_device = cpu();
-    EXPECT_TRUE(cpu_device.is_cpu());
+    EXPECT_TRUE(cpu_device.isCpu());
     EXPECT_EQ(cpu_device.index(), 0);
 
     Device cuda_device = cuda(2);
-    EXPECT_TRUE(cuda_device.is_cuda());
+    EXPECT_TRUE(cuda_device.isCuda());
     EXPECT_EQ(cuda_device.index(), 2);
 
     Device metal_device = metal(1);
-    EXPECT_TRUE(metal_device.is_metal());
+    EXPECT_TRUE(metal_device.isMetal());
     EXPECT_EQ(metal_device.index(), 1);
 }
 
@@ -53,13 +53,13 @@ TEST(DeviceTest, Equality) {
 
 TEST(DeviceTest, ToString) {
     Device cpu_device = cpu();
-    EXPECT_EQ(cpu_device.to_string(), "cpu:0");
+    EXPECT_EQ(cpu_device.toString(), "cpu:0");
 
     Device cuda_device = cuda(1);
-    EXPECT_EQ(cuda_device.to_string(), "cuda:1");
+    EXPECT_EQ(cuda_device.toString(), "cuda:1");
 
     Device metal_device = metal(2);
-    EXPECT_EQ(metal_device.to_string(), "metal:2");
+    EXPECT_EQ(metal_device.toString(), "metal:2");
 }
 
 // ========================================
@@ -69,7 +69,7 @@ TEST(DeviceTest, ToString) {
 TEST(CPUAllocatorTest, Construction) {
     CPUAllocator allocator;
     EXPECT_EQ(allocator.device(), cpu());
-    EXPECT_EQ(allocator.alignment(), CPUAllocator::DEFAULT_ALIGNMENT);
+    EXPECT_EQ(allocator.alignment(), CPUAllocator::kDefaultAlignment);
 }
 
 TEST(CPUAllocatorTest, CustomAlignment) {
@@ -131,8 +131,8 @@ TEST(CPUAllocatorTest, MultipleAllocations) {
 }
 
 TEST(CPUAllocatorTest, GetDefaultAllocator) {
-    auto allocator1 = get_default_cpu_allocator();
-    auto allocator2 = get_default_cpu_allocator();
+    auto allocator1 = getDefaultCpuAllocator();
+    auto allocator2 = getDefaultCpuAllocator();
 
     // Should return the same instance (singleton pattern)
     EXPECT_EQ(allocator1, allocator2);
@@ -272,7 +272,7 @@ TEST(StorageTest, CopyFromSizeMismatch) {
     Storage<int> storage2(5);
 
     // Copy should throw when sizes don't match
-    EXPECT_THROW(storage2.copy_from(storage1), std::invalid_argument);
+    EXPECT_THROW(storage2.copyFrom(storage1), std::invalid_argument);
 }
 
 TEST(StorageTest, ZeroSizeStorage) {

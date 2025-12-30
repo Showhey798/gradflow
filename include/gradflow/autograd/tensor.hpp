@@ -566,7 +566,7 @@ private:
         // Recursive case: iterate through current dimension
         for (size_t i = 0; i < shape_[dim]; ++i) {
             indices[dim] = i;
-            copy_recursive(dest, indices, dim + 1);
+            copyRecursive(dest, indices, dim + 1);
         }
     }
 };
