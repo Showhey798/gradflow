@@ -85,16 +85,24 @@ jobs:
       run: |
         choco install cmake ninja -y
 
-    - name: Install uv
+    - name: Install uv (Unix)
+      if: matrix.os != 'windows-latest'
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Install uv (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        irm https://astral.sh/uv/install.ps1 | iex
+        echo "$env:USERPROFILE\.cargo\bin" >> $env:GITHUB_PATH
+      shell: powershell
 
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install conan==${{ env.CONAN_VERSION }}
-        uv pip install --system -e ".[dev]"
+        uv pip install --system -e "python/[dev]"
 
     - name: Configure Conan
       if: needs.check-bindings.outputs.implemented == 'true'
@@ -294,14 +302,22 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install uv
+    - name: Install uv (Unix)
+      if: matrix.os != 'windows-latest'
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+    - name: Install uv (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        irm https://astral.sh/uv/install.ps1 | iex
+        echo "$env:USERPROFILE\.cargo\bin" >> $env:GITHUB_PATH
+      shell: powershell
+
     - name: Install dependencies
       run: |
-        uv pip install --system -e ".[dev]"
+        uv pip install --system -e "python/[dev]"
         pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints
 
     - name: Build documentation
