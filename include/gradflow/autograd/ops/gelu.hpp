@@ -54,8 +54,8 @@ public:
         // Optimize by reducing intermediate tensor allocations
         Tensor<T> scaled_inner(x.shape());
         for (size_t i = 0; i < x.size(); ++i) {
-            const T x_val = x.data()[i];
-            const T x_cubed = x_val * x_val * x_val;
+            T x_val = x.data()[i];
+            T x_cubed = x_val * x_val * x_val;
             scaled_inner.data()[i] = kSqrt2OverPi * (x_val + kCoeff * x_cubed);
         }
 
