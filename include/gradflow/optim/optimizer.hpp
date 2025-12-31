@@ -111,8 +111,8 @@ protected:
 
     /**
      * @brief List of parameters to optimize (non-owning pointers)
-     * NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
      */
+    // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
     std::vector<Variable<T>*> params_;
 };
 
