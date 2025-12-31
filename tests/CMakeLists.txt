@@ -91,6 +91,9 @@ fullscratch_add_test(ops_grad_test SOURCES test_ops_grad.cpp)
 # Activation operations tests
 fullscratch_add_test(activation_ops_test SOURCES test_activation_ops.cpp)
 
+# Loss operations tests
+fullscratch_add_test(loss_grad_test SOURCES test_loss_grad.cpp)
+
 # Phase 1 integration tests Set longer timeout (300s) to accommodate sanitizer
 # overhead Sanitizers can add 10-50x overhead, especially for large scale
 # operations
@@ -140,6 +143,7 @@ add_custom_target(
           variable_test
           ops_grad_test
           activation_ops_test
+          loss_grad_test
           phase1_integration_test
           # matrix_test vector_test activation_test loss_test
           # neural_network_test data_loader_test
