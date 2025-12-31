@@ -96,7 +96,7 @@ public:
     /**
      * @brief Returns the number of parameters being optimized
      */
-    [[nodiscard]] size_t num_params() const { return params_.size(); }
+    [[nodiscard]] size_t numParams() const { return params_.size(); }
 
     /**
      * @brief Returns the list of parameters being optimized
@@ -111,6 +111,7 @@ protected:
 
     /**
      * @brief List of parameters to optimize (non-owning pointers)
+     * NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
      */
     std::vector<Variable<T>*> params_;
 };

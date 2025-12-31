@@ -215,7 +215,7 @@ TEST_F(OptimizerTest, MultipleParameters) {
     optimizer.addParamGroup({&param1, &param2});
 
     // Verify number of parameters
-    EXPECT_EQ(optimizer.num_params(), 2);
+    EXPECT_EQ(optimizer.numParams(), 2);
 
     // Set gradients
     param1.zeroGrad();

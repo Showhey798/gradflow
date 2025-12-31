@@ -77,7 +77,7 @@ public:
             // Cache pointers for efficiency
             T* data_ptr = data.data();
             const T* grad_ptr = grad.data();
-            const size_t data_size = data.size();
+            const size_t kDataSize = data.size();
 
             // Apply momentum
             constexpr T kZeroThreshold = T(1e-10);  // Threshold for zero comparison
@@ -93,7 +93,7 @@ public:
                 T* velocity_ptr = velocity.data();
 
                 // Update velocity and parameter element-wise
-                for (size_t i = 0; i < data_size; ++i) {
+                for (size_t i = 0; i < kDataSize; ++i) {
                     // Compute effective gradient with weight decay
                     T effective_grad = grad_ptr[i];
                     if (weight_decay_ > kZeroThreshold) {
@@ -108,7 +108,7 @@ public:
                 }
             } else {
                 // Standard SGD without momentum
-                for (size_t i = 0; i < data_size; ++i) {
+                for (size_t i = 0; i < kDataSize; ++i) {
                     // Compute effective gradient with weight decay
                     T effective_grad = grad_ptr[i];
                     if (weight_decay_ > kZeroThreshold) {

@@ -122,12 +122,12 @@ public:
             const T* grad_ptr = grad.data();
             T* m_ptr = m.data();
             T* v_ptr = v.data();
-            const size_t data_size = data.size();
+            const size_t kDataSize = data.size();
 
             constexpr T kZeroThreshold = T(1e-10);  // Threshold for zero comparison
 
             // Update moments and parameters element-wise
-            for (size_t i = 0; i < data_size; ++i) {
+            for (size_t i = 0; i < kDataSize; ++i) {
                 T g = grad_ptr[i];
 
                 // Standard Adam: add weight decay to gradient (L2 regularization)
