@@ -69,9 +69,8 @@ public:
         Tensor<T> loss(Shape{});
         loss.data()[0] = sum_loss.data()[0] / static_cast<T>(predicted.size());
 
-        // Save for backward
-        this->saveForBackward("predicted", predicted);
-        this->saveForBackward("target", target);
+        // Save diff for backward (avoid recomputation)
+        this->saveForBackward("diff", diff);
 
         return loss;
     }
@@ -83,12 +82,10 @@ public:
      * @return Vector of 2 gradients: [grad_predicted, grad_target]
      */
     std::vector<Tensor<T>> backward(const Tensor<T>& grad_output) override {
-        auto predicted = this->getSavedTensor("predicted");
-        auto target = this->getSavedTensor("target");
+        auto diff = this->getSavedTensor("diff");
 
-        // grad_predicted = (2/N) * (predicted - target) * grad_output
-        auto diff = sub(predicted, target);
-        T scale = (T(2) / static_cast<T>(predicted.size())) * grad_output.data()[0];
+        // grad_predicted = (2/N) * diff * grad_output
+        T scale = (T(2) / static_cast<T>(diff.size())) * grad_output.data()[0];
 
         Tensor<T> grad_predicted(diff.shape());
         for (size_t i = 0; i < diff.size(); ++i) {
@@ -263,16 +260,19 @@ public:
         // Step 3: Compute sum along class dimension
         auto sum_exp = sum(exp_shifted, 1, /*keepdim=*/true);
 
-        // Step 4: Compute log(sum_exp)
+        // Step 4: Compute softmax probabilities (for backward)
+        auto probs = div(exp_shifted, sum_exp);
+
+        // Step 5: Compute log(sum_exp)
         auto log_sum_exp = log(sum_exp);
 
-        // Step 5: Add back max to get log(sum(exp(x)))
+        // Step 6: Add back max to get log(sum(exp(x)))
         auto log_sum_exp_shifted = add(max_logits, log_sum_exp);
 
-        // Step 6: log_softmax = x - log_sum_exp_shifted
+        // Step 7: log_softmax = x - log_sum_exp_shifted
         auto log_probs = sub(logits, log_sum_exp_shifted);
 
-        // Step 7: -Σ(target * log_probs)
+        // Step 8: -Σ(target * log_probs)
         auto target_log_probs = mul(target, log_probs);
         auto sum_loss = sum(target_log_probs);
 
@@ -281,8 +281,8 @@ public:
         Tensor<T> loss(Shape{});
         loss.data()[0] = -sum_loss.data()[0] / static_cast<T>(batch_size);
 
-        // Save for backward
-        this->saveForBackward("logits", logits);
+        // Save softmax probs and target for backward (avoid recomputation)
+        this->saveForBackward("probs", probs);
         this->saveForBackward("target", target);
 
         return loss;
@@ -295,19 +295,12 @@ public:
      * @return Vector of 2 gradients: [grad_logits, grad_target]
      */
     std::vector<Tensor<T>> backward(const Tensor<T>& grad_output) override {
-        auto logits = this->getSavedTensor("logits");
+        auto probs = this->getSavedTensor("probs");
         auto target = this->getSavedTensor("target");
 
-        size_t batch_size = logits.shape()[0];
+        size_t batch_size = probs.shape()[0];
 
-        // Compute softmax(logits) using the same stable approach
-        auto max_logits = max(logits, 1, /*keepdim=*/true);
-        auto shifted = sub(logits, max_logits);
-        auto exp_shifted = exp(shifted);
-        auto sum_exp = sum(exp_shifted, 1, /*keepdim=*/true);
-        auto probs = div(exp_shifted, sum_exp);
-
-        // grad_logits = (softmax(logits) - target) / batch_size * grad_output
+        // grad_logits = (probs - target) / batch_size * grad_output
         auto grad_logits = sub(probs, target);
 
         T scale = grad_output.data()[0] / static_cast<T>(batch_size);
@@ -415,15 +408,16 @@ public:
         auto predicted = this->getSavedTensor("predicted");
         auto target = this->getSavedTensor("target");
 
-        // grad_predicted = -(1/N) * [target/pred - (1-target)/(1-pred)] * grad_output
-        T scale = -grad_output.data()[0] / static_cast<T>(predicted.size());
+        // grad_predicted = (pred - target) / (pred * (1 - pred) + eps) * (1/N) * grad_output
+        // This is more numerically stable than the original formulation
+        T scale = grad_output.data()[0] / static_cast<T>(predicted.size());
 
         Tensor<T> grad_predicted(predicted.shape());
         for (size_t i = 0; i < predicted.size(); ++i) {
             T pred_val = predicted.data()[i];
             T target_val = target.data()[i];
             grad_predicted.data()[i] =
-                scale * (target_val / pred_val - (T(1) - target_val) / (T(1) - pred_val));
+                scale * (pred_val - target_val) / (pred_val * (T(1) - pred_val) + eps_);
         }
 
         // Target has no gradient
