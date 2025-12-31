@@ -46,7 +46,7 @@ protected:
             optimizer->step();
 
             // Zero gradients for next iteration
-            optimizer->zero_grad();
+            optimizer->zeroGrad();
         }
 
         return param.data().data()[0];
@@ -72,7 +72,7 @@ TEST_F(OptimizerTest, SGDConvergence) {
 
     // Create SGD optimizer
     auto optimizer = optim::SGD<float>(learning_rate);
-    optimizer.add_param_group({&param});
+    optimizer.addParamGroup({&param});
 
     // Optimize
     float final_value = optimize_quadratic(&optimizer, param, target_value, num_steps);
@@ -101,7 +101,7 @@ TEST_F(OptimizerTest, SGDWithMomentum) {
 
     // Create SGD optimizer with momentum
     auto optimizer = optim::SGD<float>(learning_rate, momentum);
-    optimizer.add_param_group({&param});
+    optimizer.addParamGroup({&param});
 
     // Optimize
     float final_value = optimize_quadratic(&optimizer, param, target_value, num_steps);
@@ -129,7 +129,7 @@ TEST_F(OptimizerTest, AdamConvergence) {
     // Create Adam optimizer with higher learning rate for faster convergence
     float learning_rate = 0.1f;
     auto optimizer = optim::Adam<float>(learning_rate);
-    optimizer.add_param_group({&param});
+    optimizer.addParamGroup({&param});
 
     // Optimize
     float final_value = optimize_quadratic(&optimizer, param, target_value, num_steps);
@@ -158,7 +158,7 @@ TEST_F(OptimizerTest, AdamWConvergence) {
     // Create AdamW optimizer with higher learning rate
     float learning_rate = 0.1f;
     auto optimizer = optim::Adam<float>(learning_rate, 0.9f, 0.999f, 1e-8f, weight_decay, true);
-    optimizer.add_param_group({&param});
+    optimizer.addParamGroup({&param});
 
     // Optimize
     float final_value = optimize_quadratic(&optimizer, param, target_value, num_steps);
@@ -183,14 +183,14 @@ TEST_F(OptimizerTest, ZeroGrad) {
 
     // Create optimizer and add parameter
     auto optimizer = optim::SGD<float>(0.1f);
-    optimizer.add_param_group({&param});
+    optimizer.addParamGroup({&param});
 
     // Verify gradient exists
     EXPECT_TRUE(param.hasGrad());
     EXPECT_FLOAT_EQ(param.grad().data()[0], 5.0f);
 
     // Zero gradients
-    optimizer.zero_grad();
+    optimizer.zeroGrad();
 
     // Verify gradient is zeroed
     EXPECT_TRUE(param.hasGrad());
@@ -212,7 +212,7 @@ TEST_F(OptimizerTest, MultipleParameters) {
 
     // Create optimizer
     auto optimizer = optim::SGD<float>(0.1f);
-    optimizer.add_param_group({&param1, &param2});
+    optimizer.addParamGroup({&param1, &param2});
 
     // Verify number of parameters
     EXPECT_EQ(optimizer.num_params(), 2);
@@ -250,7 +250,7 @@ TEST_F(OptimizerTest, SGDWeightDecay) {
 
     // Create optimizer with weight decay
     auto optimizer = optim::SGD<float>(learning_rate, 0.0f, weight_decay);
-    optimizer.add_param_group({&param});
+    optimizer.addParamGroup({&param});
 
     // Perform one step
     optimizer.step();
@@ -272,10 +272,10 @@ TEST_F(OptimizerTest, AdamStepCount) {
 
     // Create Adam optimizer
     auto optimizer = optim::Adam<float>();
-    optimizer.add_param_group({&param});
+    optimizer.addParamGroup({&param});
 
     // Initial step count should be 0
-    EXPECT_EQ(optimizer.step_count(), 0);
+    EXPECT_EQ(optimizer.stepCount(), 0);
 
     // Set gradient and perform steps
     for (int i = 1; i <= 5; ++i) {
@@ -284,7 +284,7 @@ TEST_F(OptimizerTest, AdamStepCount) {
         }
         param.grad().data()[0] = 1.0f;
         optimizer.step();
-        EXPECT_EQ(optimizer.step_count(), static_cast<size_t>(i));
+        EXPECT_EQ(optimizer.stepCount(), static_cast<size_t>(i));
     }
 }
 
@@ -296,7 +296,7 @@ TEST_F(OptimizerTest, HyperparameterGetters) {
     auto sgd = optim::SGD<float>(0.01f, 0.9f, 0.001f);
     EXPECT_FLOAT_EQ(sgd.lr(), 0.01f);
     EXPECT_FLOAT_EQ(sgd.momentum(), 0.9f);
-    EXPECT_FLOAT_EQ(sgd.weight_decay(), 0.001f);
+    EXPECT_FLOAT_EQ(sgd.weightDecay(), 0.001f);
 
     // Test Adam
     auto adam = optim::Adam<float>(0.001f, 0.9f, 0.999f, 1e-8f, 0.01f, true);
@@ -304,8 +304,8 @@ TEST_F(OptimizerTest, HyperparameterGetters) {
     EXPECT_FLOAT_EQ(adam.beta1(), 0.9f);
     EXPECT_FLOAT_EQ(adam.beta2(), 0.999f);
     EXPECT_FLOAT_EQ(adam.epsilon(), 1e-8f);
-    EXPECT_FLOAT_EQ(adam.weight_decay(), 0.01f);
-    EXPECT_TRUE(adam.is_adamw());
+    EXPECT_FLOAT_EQ(adam.weightDecay(), 0.01f);
+    EXPECT_TRUE(adam.isAdamw());
 }
 
 /**
@@ -316,14 +316,14 @@ TEST_F(OptimizerTest, SetLearningRate) {
     auto sgd = optim::SGD<float>(0.01f);
     EXPECT_FLOAT_EQ(sgd.lr(), 0.01f);
 
-    sgd.set_lr(0.001f);
+    sgd.setLr(0.001f);
     EXPECT_FLOAT_EQ(sgd.lr(), 0.001f);
 
     // Test Adam
     auto adam = optim::Adam<float>(0.01f);
     EXPECT_FLOAT_EQ(adam.lr(), 0.01f);
 
-    adam.set_lr(0.001f);
+    adam.setLr(0.001f);
     EXPECT_FLOAT_EQ(adam.lr(), 0.001f);
 }
 

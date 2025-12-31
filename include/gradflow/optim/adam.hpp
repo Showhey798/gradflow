@@ -7,8 +7,7 @@
 
 #include <gradflow/autograd/tensor.hpp>
 
-namespace gradflow {
-namespace optim {
+namespace gradflow::optim {
 
 /**
  * @brief Adam optimizer with optional AdamW weight decay
@@ -67,7 +66,6 @@ public:
           epsilon_(epsilon),
           weight_decay_(weight_decay),
           adamw_(adamw),
-          step_count_(0),
           beta1_power_(T(1)),
           beta2_power_(T(1)) {
         if (lr <= 0) {
@@ -126,7 +124,7 @@ public:
             T* v_ptr = v.data();
             const size_t data_size = data.size();
 
-            const T zero_threshold = T(1e-10);  // Threshold for zero comparison
+            constexpr T kZeroThreshold = T(1e-10);  // Threshold for zero comparison
 
             // Update moments and parameters element-wise
             for (size_t i = 0; i < data_size; ++i) {
@@ -134,7 +132,7 @@ public:
 
                 // Standard Adam: add weight decay to gradient (L2 regularization)
                 // This affects momentum estimation, unlike AdamW
-                if (!adamw_ && weight_decay_ > zero_threshold) {
+                if (!adamw_ && weight_decay_ > kZeroThreshold) {
                     g += weight_decay_ * data_ptr[i];
                 }
 
@@ -152,7 +150,7 @@ public:
                 T update = m_hat / (std::sqrt(v_hat) + epsilon_);
 
                 // Apply update with optional AdamW weight decay
-                if (adamw_ && weight_decay_ > zero_threshold) {
+                if (adamw_ && weight_decay_ > kZeroThreshold) {
                     // AdamW: apply weight decay directly to parameters (decoupled)
                     data_ptr[i] -= lr_ * (update + weight_decay_ * data_ptr[i]);
                 } else {
@@ -166,42 +164,42 @@ public:
     /**
      * @brief Returns the learning rate
      */
-    T lr() const { return lr_; }
+    [[nodiscard]] T lr() const { return lr_; }
 
     /**
      * @brief Returns beta1 coefficient
      */
-    T beta1() const { return beta1_; }
+    [[nodiscard]] T beta1() const { return beta1_; }
 
     /**
      * @brief Returns beta2 coefficient
      */
-    T beta2() const { return beta2_; }
+    [[nodiscard]] T beta2() const { return beta2_; }
 
     /**
      * @brief Returns epsilon value
      */
-    T epsilon() const { return epsilon_; }
+    [[nodiscard]] T epsilon() const { return epsilon_; }
 
     /**
      * @brief Returns weight decay coefficient
      */
-    T weight_decay() const { return weight_decay_; }
+    [[nodiscard]] T weightDecay() const { return weight_decay_; }
 
     /**
      * @brief Returns whether AdamW variant is used
      */
-    bool is_adamw() const { return adamw_; }
+    [[nodiscard]] bool isAdamw() const { return adamw_; }
 
     /**
      * @brief Returns the current step count
      */
-    size_t step_count() const { return step_count_; }
+    [[nodiscard]] size_t stepCount() const { return step_count_; }
 
     /**
      * @brief Sets the learning rate
      */
-    void set_lr(T lr) {
+    void setLr(T lr) {
         if (lr <= 0) {
             throw std::invalid_argument("Learning rate must be positive");
         }
@@ -209,15 +207,15 @@ public:
     }
 
 private:
-    T lr_;               ///< Learning rate
-    T beta1_;            ///< Coefficient for first moment estimate
-    T beta2_;            ///< Coefficient for second moment estimate
-    T epsilon_;          ///< Small constant for numerical stability
-    T weight_decay_;     ///< Weight decay coefficient
-    bool adamw_;         ///< Whether to use AdamW variant
-    size_t step_count_;  ///< Number of steps taken (for bias correction)
-    T beta1_power_;      ///< Cumulative product of beta1 (for efficient bias correction)
-    T beta2_power_;      ///< Cumulative product of beta2 (for efficient bias correction)
+    T lr_;                  ///< Learning rate
+    T beta1_;               ///< Coefficient for first moment estimate
+    T beta2_;               ///< Coefficient for second moment estimate
+    T epsilon_;             ///< Small constant for numerical stability
+    T weight_decay_;        ///< Weight decay coefficient
+    bool adamw_;            ///< Whether to use AdamW variant
+    size_t step_count_{0};  ///< Number of steps taken (for bias correction)
+    T beta1_power_;         ///< Cumulative product of beta1 (for efficient bias correction)
+    T beta2_power_;         ///< Cumulative product of beta2 (for efficient bias correction)
 
     /// First moment buffers (maps parameter pointer to its first moment)
     std::unordered_map<Variable<T>*, Tensor<T>> m_buffers_;
@@ -226,5 +224,4 @@ private:
     std::unordered_map<Variable<T>*, Tensor<T>> v_buffers_;
 };
 
-}  // namespace optim
-}  // namespace gradflow
+}  // namespace gradflow::optim

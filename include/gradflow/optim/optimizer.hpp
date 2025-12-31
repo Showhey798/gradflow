@@ -5,8 +5,7 @@
 
 #include <gradflow/autograd/variable.hpp>
 
-namespace gradflow {
-namespace optim {
+namespace gradflow::optim {
 
 /**
  * @brief Base class for all optimizers
@@ -28,7 +27,7 @@ namespace optim {
  *
  * // Create optimizer
  * auto optimizer = std::make_unique<SGD<float>>(0.01);
- * optimizer->add_param_group({&w, &b});
+ * optimizer->addParamGroup({&w, &b});
  *
  * // Training loop
  * for (int epoch = 0; epoch < 100; ++epoch) {
@@ -36,7 +35,7 @@ namespace optim {
  *     auto loss = compute_loss(w, b);
  *
  *     // Backward pass
- *     optimizer->zero_grad();
+ *     optimizer->zeroGrad();
  *     loss.backward();
  *
  *     // Update parameters
@@ -54,6 +53,12 @@ public:
      */
     virtual ~Optimizer() = default;
 
+    // Optimizer instances should not be copied or moved
+    Optimizer(const Optimizer&) = delete;
+    Optimizer& operator=(const Optimizer&) = delete;
+    Optimizer(Optimizer&&) = delete;
+    Optimizer& operator=(Optimizer&&) = delete;
+
     /**
      * @brief Adds a parameter group to the optimizer
      *
@@ -62,7 +67,7 @@ public:
      *
      * @param params Vector of pointers to variables to optimize
      */
-    virtual void add_param_group(const std::vector<Variable<T>*>& params) {
+    virtual void addParamGroup(const std::vector<Variable<T>*>& params) {
         params_.insert(params_.end(), params.begin(), params.end());
     }
 
@@ -80,7 +85,7 @@ public:
      * This should be called before each backward pass to prevent
      * gradient accumulation across iterations.
      */
-    virtual void zero_grad() {
+    virtual void zeroGrad() {
         for (auto* param : params_) {
             if (param->requiresGrad()) {
                 param->zeroGrad();
@@ -91,12 +96,12 @@ public:
     /**
      * @brief Returns the number of parameters being optimized
      */
-    size_t num_params() const { return params_.size(); }
+    [[nodiscard]] size_t num_params() const { return params_.size(); }
 
     /**
      * @brief Returns the list of parameters being optimized
      */
-    const std::vector<Variable<T>*>& params() const { return params_; }
+    [[nodiscard]] const std::vector<Variable<T>*>& params() const { return params_; }
 
 protected:
     /**
@@ -110,5 +115,4 @@ protected:
     std::vector<Variable<T>*> params_;
 };
 
-}  // namespace optim
-}  // namespace gradflow
+}  // namespace gradflow::optim

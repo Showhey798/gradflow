@@ -6,8 +6,7 @@
 
 #include <gradflow/autograd/tensor.hpp>
 
-namespace gradflow {
-namespace optim {
+namespace gradflow::optim {
 
 /**
  * @brief Stochastic Gradient Descent (SGD) optimizer with momentum
@@ -81,8 +80,8 @@ public:
             const size_t data_size = data.size();
 
             // Apply momentum
-            const T zero_threshold = T(1e-10);  // Threshold for zero comparison
-            if (momentum_ > zero_threshold) {
+            constexpr T kZeroThreshold = T(1e-10);  // Threshold for zero comparison
+            if (momentum_ > kZeroThreshold) {
                 // Get or create velocity buffer for this parameter
                 auto it = velocity_buffers_.find(param);
                 if (it == velocity_buffers_.end()) {
@@ -97,7 +96,7 @@ public:
                 for (size_t i = 0; i < data_size; ++i) {
                     // Compute effective gradient with weight decay
                     T effective_grad = grad_ptr[i];
-                    if (weight_decay_ > zero_threshold) {
+                    if (weight_decay_ > kZeroThreshold) {
                         effective_grad += weight_decay_ * data_ptr[i];
                     }
 
@@ -112,7 +111,7 @@ public:
                 for (size_t i = 0; i < data_size; ++i) {
                     // Compute effective gradient with weight decay
                     T effective_grad = grad_ptr[i];
-                    if (weight_decay_ > zero_threshold) {
+                    if (weight_decay_ > kZeroThreshold) {
                         effective_grad += weight_decay_ * data_ptr[i];
                     }
 
@@ -126,22 +125,22 @@ public:
     /**
      * @brief Returns the learning rate
      */
-    T lr() const { return lr_; }
+    [[nodiscard]] T lr() const { return lr_; }
 
     /**
      * @brief Returns the momentum coefficient
      */
-    T momentum() const { return momentum_; }
+    [[nodiscard]] T momentum() const { return momentum_; }
 
     /**
      * @brief Returns the weight decay coefficient
      */
-    T weight_decay() const { return weight_decay_; }
+    [[nodiscard]] T weightDecay() const { return weight_decay_; }
 
     /**
      * @brief Sets the learning rate
      */
-    void set_lr(T lr) {
+    void setLr(T lr) {
         if (lr <= 0) {
             throw std::invalid_argument("Learning rate must be positive");
         }
@@ -157,5 +156,4 @@ private:
     std::unordered_map<Variable<T>*, Tensor<T>> velocity_buffers_;
 };
 
-}  // namespace optim
-}  // namespace gradflow
+}  // namespace gradflow::optim
