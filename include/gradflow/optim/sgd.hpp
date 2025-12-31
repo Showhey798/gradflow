@@ -75,9 +75,14 @@ public:
             auto& data = param->data();
             const auto& grad = param->grad();
 
+            // Cache pointers for efficiency
+            T* data_ptr = data.data();
+            const T* grad_ptr = grad.data();
+            const size_t data_size = data.size();
+
             // Apply momentum
-            const T epsilon = T(1e-10);
-            if (momentum_ > epsilon) {
+            const T zero_threshold = T(1e-10);  // Threshold for zero comparison
+            if (momentum_ > zero_threshold) {
                 // Get or create velocity buffer for this parameter
                 auto it = velocity_buffers_.find(param);
                 if (it == velocity_buffers_.end()) {
@@ -86,32 +91,33 @@ public:
                 }
 
                 auto& velocity = velocity_buffers_[param];
+                T* velocity_ptr = velocity.data();
 
                 // Update velocity and parameter element-wise
-                for (size_t i = 0; i < data.size(); ++i) {
+                for (size_t i = 0; i < data_size; ++i) {
                     // Compute effective gradient with weight decay
-                    T effective_grad = grad.data()[i];
-                    if (weight_decay_ > epsilon) {
-                        effective_grad += weight_decay_ * data.data()[i];
+                    T effective_grad = grad_ptr[i];
+                    if (weight_decay_ > zero_threshold) {
+                        effective_grad += weight_decay_ * data_ptr[i];
                     }
 
                     // Update velocity: v_t = momentum * v_{t-1} + g_t
-                    velocity.data()[i] = momentum_ * velocity.data()[i] + effective_grad;
+                    velocity_ptr[i] = momentum_ * velocity_ptr[i] + effective_grad;
 
                     // Update parameter: w_t = w_t - lr * v_t
-                    data.data()[i] -= lr_ * velocity.data()[i];
+                    data_ptr[i] -= lr_ * velocity_ptr[i];
                 }
             } else {
                 // Standard SGD without momentum
-                for (size_t i = 0; i < data.size(); ++i) {
+                for (size_t i = 0; i < data_size; ++i) {
                     // Compute effective gradient with weight decay
-                    T effective_grad = grad.data()[i];
-                    if (weight_decay_ > epsilon) {
-                        effective_grad += weight_decay_ * data.data()[i];
+                    T effective_grad = grad_ptr[i];
+                    if (weight_decay_ > zero_threshold) {
+                        effective_grad += weight_decay_ * data_ptr[i];
                     }
 
                     // Update parameter: w_t = w_t - lr * g_t
-                    data.data()[i] -= lr_ * effective_grad;
+                    data_ptr[i] -= lr_ * effective_grad;
                 }
             }
         }

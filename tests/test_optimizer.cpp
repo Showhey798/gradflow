@@ -77,8 +77,8 @@ TEST_F(OptimizerTest, SGDConvergence) {
     // Optimize
     float final_value = optimize_quadratic(&optimizer, param, target_value, num_steps);
 
-    // Check convergence (allow 5% error)
-    EXPECT_NEAR(final_value, target_value, 0.15);
+    // Check convergence (should converge within 2% of target)
+    EXPECT_NEAR(final_value, target_value, 0.06);  // 2% of 3.0
 }
 
 /**
@@ -106,8 +106,8 @@ TEST_F(OptimizerTest, SGDWithMomentum) {
     // Optimize
     float final_value = optimize_quadratic(&optimizer, param, target_value, num_steps);
 
-    // Check convergence (momentum should help convergence)
-    EXPECT_NEAR(final_value, target_value, 0.25);
+    // Check convergence (momentum should help convergence, within 2% of target)
+    EXPECT_NEAR(final_value, target_value, 0.10);  // 2% of 5.0
 }
 
 /**
@@ -134,8 +134,8 @@ TEST_F(OptimizerTest, AdamConvergence) {
     // Optimize
     float final_value = optimize_quadratic(&optimizer, param, target_value, num_steps);
 
-    // Check convergence (Adam should converge well with higher learning rate)
-    EXPECT_NEAR(final_value, target_value, 0.2);
+    // Check convergence (Adam should converge well, within 2% of target)
+    EXPECT_NEAR(final_value, target_value, 0.06);  // 2% of 3.0
 }
 
 /**
@@ -164,8 +164,8 @@ TEST_F(OptimizerTest, AdamWConvergence) {
     float final_value = optimize_quadratic(&optimizer, param, target_value, num_steps);
 
     // With weight decay, the convergence point should be slightly pulled toward 0
-    // But should still be reasonably close to target
-    EXPECT_NEAR(final_value, target_value, 0.8);
+    // But should still converge close to target (within 2%)
+    EXPECT_NEAR(final_value, target_value, 0.06);  // 2% of 3.0
 }
 
 /**

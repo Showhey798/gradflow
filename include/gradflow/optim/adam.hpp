@@ -67,7 +67,9 @@ public:
           epsilon_(epsilon),
           weight_decay_(weight_decay),
           adamw_(adamw),
-          step_count_(0) {
+          step_count_(0),
+          beta1_power_(T(1)),
+          beta2_power_(T(1)) {
         if (lr <= 0) {
             throw std::invalid_argument("Learning rate must be positive");
         }
@@ -93,11 +95,11 @@ public:
     void step() override {
         step_count_++;
 
-        // Compute bias correction terms
-        T bias_correction1 = T(1) - static_cast<T>(std::pow(static_cast<double>(beta1_),
-                                                            static_cast<double>(step_count_)));
-        T bias_correction2 = T(1) - static_cast<T>(std::pow(static_cast<double>(beta2_),
-                                                            static_cast<double>(step_count_)));
+        // Update bias correction terms efficiently using cumulative multiplication
+        beta1_power_ *= beta1_;
+        beta2_power_ *= beta2_;
+        T bias_correction1 = T(1) - beta1_power_;
+        T bias_correction2 = T(1) - beta2_power_;
 
         for (auto* param : this->params_) {
             if (!param->requiresGrad() || !param->hasGrad()) {
@@ -117,35 +119,45 @@ public:
             auto& m = m_buffers_[param];
             auto& v = v_buffers_[param];
 
+            // Cache pointers for efficiency
+            T* data_ptr = data.data();
+            const T* grad_ptr = grad.data();
+            T* m_ptr = m.data();
+            T* v_ptr = v.data();
+            const size_t data_size = data.size();
+
+            const T zero_threshold = T(1e-10);  // Threshold for zero comparison
+
             // Update moments and parameters element-wise
-            for (size_t i = 0; i < data.size(); ++i) {
-                T g = grad.data()[i];
+            for (size_t i = 0; i < data_size; ++i) {
+                T g = grad_ptr[i];
+
+                // Standard Adam: add weight decay to gradient (L2 regularization)
+                // This affects momentum estimation, unlike AdamW
+                if (!adamw_ && weight_decay_ > zero_threshold) {
+                    g += weight_decay_ * data_ptr[i];
+                }
 
                 // Update biased first moment estimate: m_t = beta1 * m_{t-1} + (1 - beta1) * g_t
-                m.data()[i] = beta1_ * m.data()[i] + (T(1) - beta1_) * g;
+                m_ptr[i] = beta1_ * m_ptr[i] + (T(1) - beta1_) * g;
 
                 // Update biased second moment estimate: v_t = beta2 * v_{t-1} + (1 - beta2) * g_t^2
-                v.data()[i] = beta2_ * v.data()[i] + (T(1) - beta2_) * g * g;
+                v_ptr[i] = beta2_ * v_ptr[i] + (T(1) - beta2_) * g * g;
 
                 // Compute bias-corrected moment estimates
-                T m_hat = m.data()[i] / bias_correction1;
-                T v_hat = v.data()[i] / bias_correction2;
+                T m_hat = m_ptr[i] / bias_correction1;
+                T v_hat = v_ptr[i] / bias_correction2;
 
                 // Compute update: update = m_hat / (sqrt(v_hat) + epsilon)
                 T update = m_hat / (std::sqrt(v_hat) + epsilon_);
 
-                // Apply update with optional weight decay
-                const T eps = T(1e-10);
-                if (adamw_ && weight_decay_ > eps) {
-                    // AdamW: apply weight decay directly to parameters
-                    data.data()[i] -= lr_ * (update + weight_decay_ * data.data()[i]);
-                } else if (weight_decay_ > eps) {
-                    // Standard Adam with L2 regularization
-                    update += weight_decay_ * data.data()[i];
-                    data.data()[i] -= lr_ * update;
+                // Apply update with optional AdamW weight decay
+                if (adamw_ && weight_decay_ > zero_threshold) {
+                    // AdamW: apply weight decay directly to parameters (decoupled)
+                    data_ptr[i] -= lr_ * (update + weight_decay_ * data_ptr[i]);
                 } else {
-                    // Standard Adam without weight decay
-                    data.data()[i] -= lr_ * update;
+                    // Standard Adam (with or without L2 regularization already in gradient)
+                    data_ptr[i] -= lr_ * update;
                 }
             }
         }
@@ -204,6 +216,8 @@ private:
     T weight_decay_;     ///< Weight decay coefficient
     bool adamw_;         ///< Whether to use AdamW variant
     size_t step_count_;  ///< Number of steps taken (for bias correction)
+    T beta1_power_;      ///< Cumulative product of beta1 (for efficient bias correction)
+    T beta2_power_;      ///< Cumulative product of beta2 (for efficient bias correction)
 
     /// First moment buffers (maps parameter pointer to its first moment)
     std::unordered_map<Variable<T>*, Tensor<T>> m_buffers_;
