@@ -447,6 +447,16 @@ public:
     }
 
     /**
+     * @brief Sets the random seed for reproducible random number generation
+     *
+     * This affects all subsequent calls to randn() and rand().
+     * Should be called at the beginning of tests or experiments for reproducibility.
+     *
+     * @param seed Random seed value
+     */
+    static void setSeed(unsigned int seed) { getRandomGenerator().seed(seed); }
+
+    /**
      * @brief Creates a tensor filled with values from a normal distribution
      *
      * @param shape Shape of the tensor
@@ -461,12 +471,10 @@ public:
                            const std::shared_ptr<DeviceAllocator>& allocator = nullptr) {
         Tensor<T> result(shape, allocator);
 
-        std::random_device rd;
-        std::mt19937 gen(rd());
         std::normal_distribution<T> dist(mean, stddev);
 
         for (size_t i = 0; i < result.size(); ++i) {
-            (*result.storage_)[i] = dist(gen);
+            (*result.storage_)[i] = dist(getRandomGenerator());
         }
 
         return result;
@@ -483,12 +491,10 @@ public:
                           const std::shared_ptr<DeviceAllocator>& allocator = nullptr) {
         Tensor<T> result(shape, allocator);
 
-        std::random_device rd;
-        std::mt19937 gen(rd());
         std::uniform_real_distribution<T> dist(T(0), T(1));
 
         for (size_t i = 0; i < result.size(); ++i) {
-            (*result.storage_)[i] = dist(gen);
+            (*result.storage_)[i] = dist(getRandomGenerator());
         }
 
         return result;
@@ -567,6 +573,19 @@ private:
             indices[dim] = i;
             copyRecursive(dest, indices, dim + 1);
         }
+    }
+
+    /**
+     * @brief Returns the static random number generator
+     *
+     * This generator is shared across all Tensor instances and can be seeded
+     * using setSeed() for reproducible random number generation.
+     *
+     * @return Reference to the static random generator
+     */
+    static std::mt19937& getRandomGenerator() {
+        static std::mt19937 generator(std::random_device{}());
+        return generator;
     }
 };
 

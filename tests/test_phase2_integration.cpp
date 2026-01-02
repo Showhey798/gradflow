@@ -22,7 +22,10 @@ namespace gradflow {
  */
 class Phase2IntegrationTest : public ::testing::Test {
 protected:
-    void SetUp() override {}
+    void SetUp() override {
+        // Set random seed for reproducibility
+        Tensor<float>::setSeed(42);
+    }
 
     void TearDown() override {}
 
@@ -80,9 +83,6 @@ protected:
  *   - すべてのサンプルで正解に近い値を出力
  */
 TEST_F(Phase2IntegrationTest, SimpleNeuralNetwork) {
-    // Set random seed for reproducibility
-    std::srand(42);
-
     // XOR データ
     auto X = Tensor<float>({{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}});
     // y is [4, 1] shape
@@ -134,20 +134,50 @@ TEST_F(Phase2IntegrationTest, SimpleNeuralNetwork) {
     // 精度検証
     // 学習が収束していることを確認（最終ロスが初期ロスより小さい）
     auto X_var_final = Variable<float>(X, false);
-    auto h_final = relu(matmul(X_var_final, W1) + b1);
-    auto y_pred_final = sigmoid(matmul(h_final, W2) + b2);
+    auto h1_final = matmul(X_var_final, W1);
+    auto h2_final = h1_final + b1;
+    auto h_final = relu(h2_final);
+    auto y1_final = matmul(h_final, W2);
+    auto y2_final = y1_final + b2;
+    auto y_pred_final = sigmoid(y2_final);
     auto y_var_final = Variable<float>(y, false);
     auto final_loss = mse_loss(y_pred_final, y_var_final);
 
-    // 最終ロスが 0.25 未満であることを確認（初期ロスは通常 0.25 付近）
-    // これにより、学習が進んでいることを確認
-    EXPECT_LT(final_loss.data()[{}], 0.25f);
+    // 最終ロスが 0.1 未満であることを確認（学習が十分に収束している）
+    EXPECT_LT(final_loss.data()[{}], 0.1f)
+        << "Loss should be less than 0.1. Got: " << final_loss.data()[{}];
 
-    // 予測値が [0, 1] の範囲内であることを確認
+    // 各サンプルの予測精度を個別に検証
+    const float kThreshold = 0.8f;  // 正解とみなす閾値
+
+    // XOR(0, 0) = 0
+    EXPECT_LT((y_pred_final.data()[{0, 0}]), 0.2f)
+        << "XOR(0,0) should be close to 0, got " << y_pred_final.data()[{0, 0}];
+
+    // XOR(0, 1) = 1
+    EXPECT_GT((y_pred_final.data()[{1, 0}]), kThreshold)
+        << "XOR(0,1) should be close to 1, got " << y_pred_final.data()[{1, 0}];
+
+    // XOR(1, 0) = 1
+    EXPECT_GT((y_pred_final.data()[{2, 0}]), kThreshold)
+        << "XOR(1,0) should be close to 1, got " << y_pred_final.data()[{2, 0}];
+
+    // XOR(1, 1) = 0
+    EXPECT_LT((y_pred_final.data()[{3, 0}]), 0.2f)
+        << "XOR(1,1) should be close to 0, got " << y_pred_final.data()[{3, 0}];
+
+    // 正解率を計算（デバッグ用）
+    int correct = 0;
     for (size_t i = 0; i < 4; ++i) {
-        EXPECT_GE((y_pred_final.data()[{i, 0}]), 0.0f);
-        EXPECT_LE((y_pred_final.data()[{i, 0}]), 1.0f);
+        float pred = y_pred_final.data()[{i, 0}];
+        float target = y[{i, 0}];
+        bool is_correct = (target < 0.5f && pred < 0.5f) || (target > 0.5f && pred > 0.5f);
+        if (is_correct) {
+            correct++;
+        }
     }
+    float accuracy = static_cast<float>(correct) / 4.0f;
+    EXPECT_GE(accuracy, 1.0f) << "Accuracy: " << (accuracy * 100) << "%";
 }
 
 // ========================================
@@ -203,10 +233,9 @@ TEST_F(Phase2IntegrationTest, GradientAccuracy) {
  * AddressSanitizer で検出されます。
  */
 TEST_F(Phase2IntegrationTest, MemoryManagement) {
-    const size_t kNumIterations = getIterationCount(10);  // Reduce iterations for debugging
+    const size_t kNumIterations = getIterationCount(10);
 
     for (size_t i = 0; i < kNumIterations; ++i) {
-        // Simplified test without backward for now
         // X is [1, 2], W is [2, 1], result is [1, 1]
         Tensor<float> X_data(Shape({1, 2}));
         X_data[{0, 0}] = 1.0f;
@@ -214,7 +243,8 @@ TEST_F(Phase2IntegrationTest, MemoryManagement) {
         auto X = Variable<float>(X_data, false);
 
         auto W = Variable<float>(Tensor<float>::randn({2, 1}), true);
-        auto y_pred = sigmoid(matmul(X, W));
+        auto matmul_result = matmul(X, W);
+        auto y_pred = sigmoid(matmul_result);
 
         Tensor<float> y_true_data(Shape({1, 1}));
         y_true_data[{0, 0}] = 0.5f;
@@ -222,7 +252,12 @@ TEST_F(Phase2IntegrationTest, MemoryManagement) {
 
         auto loss = mse_loss(y_pred, y_true);
 
-        // Test forward pass only for now - backward has issues
+        // Test backward pass to ensure no memory leaks
+        loss.backward();
+
+        // Verify that gradient has been computed
+        EXPECT_TRUE(W.hasGrad());
+
         // Variables should be properly deallocated
     }
 
