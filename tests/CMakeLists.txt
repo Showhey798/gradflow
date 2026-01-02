@@ -100,6 +100,11 @@ fullscratch_add_test(loss_grad_test SOURCES test_loss_grad.cpp)
 fullscratch_add_test(phase1_integration_test SOURCES
                      test_phase1_integration.cpp TIMEOUT 300)
 
+# Phase 2 integration tests Set longer timeout (300s) to accommodate sanitizer
+# overhead and XOR training iterations
+fullscratch_add_test(phase2_integration_test SOURCES
+                     test_phase2_integration.cpp TIMEOUT 300)
+
 # TODO: Implement these tests # Matrix operations tests
 # fullscratch_add_test(matrix_test SOURCES test_matrix.cpp )
 #
@@ -145,6 +150,7 @@ add_custom_target(
           activation_ops_test
           loss_grad_test
           phase1_integration_test
+          phase2_integration_test
           # matrix_test vector_test activation_test loss_test
           # neural_network_test data_loader_test
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
