@@ -1,12 +1,16 @@
 #pragma once
 
+#include "../operation.hpp"
 #include "../tensor.hpp"
 #include "elementwise.hpp"
 
 #include <algorithm>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace gradflow {
 
@@ -267,5 +271,69 @@ Tensor<T> min(const Tensor<T>& a, size_t axis) {
 
     return result;
 }
+
+// ========================================
+// Reduction Operations for Autograd
+// ========================================
+
+/**
+ * @brief Sum reduction operation with automatic differentiation
+ *
+ * Computes the sum of all elements in the input tensor.
+ *
+ * Forward:
+ *   y = Σ(x)
+ *
+ * Backward:
+ *   ∂L/∂x = ∂L/∂y * 1 (broadcasted to input shape)
+ *
+ * @tparam T Element type (float, double, etc.)
+ */
+template <typename T>
+class SumOperation : public Operation<T> {
+public:
+    /**
+     * @brief Forward pass: compute sum
+     *
+     * @param inputs Vector containing exactly 1 tensor
+     * @return Scalar tensor containing the sum
+     * @throws std::invalid_argument if inputs size is not 1
+     */
+    Tensor<T> forward(const std::vector<Tensor<T>>& inputs) override {
+        if (inputs.size() != 1) {
+            throw std::invalid_argument("SumOperation requires exactly 1 input");
+        }
+
+        const auto& x = inputs[0];
+
+        // Save input shape for backward
+        this->saveForBackward("input_shape_holder", Tensor<T>(x.shape()));
+
+        return sum(x);
+    }
+
+    /**
+     * @brief Backward pass: compute gradients
+     *
+     * @param grad_output Gradient of loss (scalar)
+     * @return Vector of gradients [grad_x]
+     */
+    std::vector<Tensor<T>> backward(const Tensor<T>& grad_output) override {
+        auto input_shape = this->getSavedTensor("input_shape_holder").shape();
+
+        // Gradient is broadcasted to input shape
+        // grad_x = grad_output * 1 (for each element)
+        Tensor<T> grad_x(input_shape);
+        T grad_value = grad_output[{}];  // Scalar value
+
+        for (size_t i = 0; i < grad_x.size(); ++i) {
+            grad_x.data()[i] = grad_value;
+        }
+
+        return {grad_x};
+    }
+
+    [[nodiscard]] std::string name() const override { return "SumOperation"; }
+};
 
 }  // namespace gradflow
