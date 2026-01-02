@@ -160,7 +160,7 @@ Variable<T> sum(Variable<T>& x) {
  * @return Variable representing the MSE loss (scalar)
  */
 template <typename T>
-Variable<T> mse_loss(Variable<T>& predicted, Variable<T>& target) {
+Variable<T> mseLoss(Variable<T>& predicted, Variable<T>& target) {
     auto op = std::make_shared<MSELossOperation<T>>();
     op->setInputs({&predicted, &target});
 

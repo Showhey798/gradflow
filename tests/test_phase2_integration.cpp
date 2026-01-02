@@ -123,7 +123,7 @@ TEST_F(Phase2IntegrationTest, SimpleNeuralNetwork) {
         auto y2 = y1 + b2;
         auto y_pred = sigmoid(y2);
         auto y_var = Variable<float>(y, false);
-        auto loss = mse_loss(y_pred, y_var);
+        auto loss = mseLoss(y_pred, y_var);
 
         // Backward pass
         optimizer.zeroGrad();
@@ -141,7 +141,7 @@ TEST_F(Phase2IntegrationTest, SimpleNeuralNetwork) {
     auto y2_final = y1_final + b2;
     auto y_pred_final = sigmoid(y2_final);
     auto y_var_final = Variable<float>(y, false);
-    auto final_loss = mse_loss(y_pred_final, y_var_final);
+    auto final_loss = mseLoss(y_pred_final, y_var_final);
 
     // 最終ロスが 0.1 未満であることを確認（学習が十分に収束している）
     EXPECT_LT(final_loss.data()[{}], 0.1f)
@@ -250,7 +250,7 @@ TEST_F(Phase2IntegrationTest, MemoryManagement) {
         y_true_data[{0, 0}] = 0.5f;
         auto y_true = Variable<float>(y_true_data, false);
 
-        auto loss = mse_loss(y_pred, y_true);
+        auto loss = mseLoss(y_pred, y_true);
 
         // Test backward pass to ensure no memory leaks
         loss.backward();
