@@ -190,7 +190,7 @@ TEST_F(MemoryPoolTest, PerformanceBenchmark) {
   if (duration_pool.count() > 0) {
     std::cout << "Speedup: "
               << static_cast<double>(duration_direct.count()) /
-                     duration_pool.count()
+                     static_cast<double>(duration_pool.count())
               << "x\n";
   }
 

@@ -1,7 +1,11 @@
 #include "gradflow/autograd/memory_pool.hpp"
 
 #include <algorithm>
+#include <new>
 #include <stdexcept>
+#include <utility>
+
+#include "gradflow/autograd/allocator.hpp"
 
 namespace gradflow {
 
