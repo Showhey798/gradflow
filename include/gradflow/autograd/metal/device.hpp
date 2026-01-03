@@ -80,13 +80,6 @@ class MetalDevice {
   [[nodiscard]] bool hasUnifiedMemory() const;
 
   /**
-   * @brief 内部実装へのアクセス (Allocator 用)
-   * @internal この関数は内部実装でのみ使用されます
-   * @return 内部実装ポインタ
-   */
-  MetalDeviceImpl* impl() const { return impl_.get(); }
-
-  /**
    * @brief Metal デバイスハンドルを取得 (Allocator 用)
    * @internal この関数は内部実装でのみ使用されます
    * @return Metal デバイスハンドル (void* として id<MTLDevice> を返す)
