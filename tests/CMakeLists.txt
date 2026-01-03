@@ -115,6 +115,13 @@ fullscratch_add_test(phase1_integration_test SOURCES
 fullscratch_add_test(phase2_integration_test SOURCES
                      test_phase2_integration.cpp TIMEOUT 300)
 
+# Phase 3 integration tests Set longer timeout (300s) to accommodate sanitizer
+# overhead and Metal GPU operations (macOS only)
+if(APPLE AND GRADFLOW_ENABLE_METAL)
+  fullscratch_add_test(phase3_integration_test SOURCES
+                       test_phase3_integration.cpp TIMEOUT 300)
+endif()
+
 # TODO: Implement these tests # Matrix operations tests
 # fullscratch_add_test(matrix_test SOURCES test_matrix.cpp )
 #
@@ -164,7 +171,7 @@ set(ALL_TESTS
 # Add Metal tests if enabled
 if(APPLE AND GRADFLOW_ENABLE_METAL)
   list(APPEND ALL_TESTS metal_device_test metal_kernels_test
-       metal_ops_grad_test)
+       metal_ops_grad_test phase3_integration_test)
 endif()
 
 add_custom_target(
