@@ -166,25 +166,26 @@ void MemoryPool::allocateNewPool(size_t size) {
 
 std::multimap<size_t, void*>::iterator MemoryPool::findPreviousFreeBlock(
     void* ptr) {
-  for (auto it = free_blocks_.begin(); it != free_blocks_.end(); ++it) {
-    void* block_end =
-        static_cast<char*>(it->second) + static_cast<ptrdiff_t>(it->first);
-    if (block_end == ptr) {
-      return it;
-    }
-  }
-  return free_blocks_.end();
+  return std::find_if(free_blocks_.begin(),
+                      free_blocks_.end(),
+                      [ptr](const auto& block) {
+                        const void* block_end = static_cast<const char*>(
+                                                    block.second) +
+                                                static_cast<ptrdiff_t>(
+                                                    block.first);
+                        return block_end == ptr;
+                      });
 }
 
 std::multimap<size_t, void*>::iterator MemoryPool::findNextFreeBlock(
     void* ptr, size_t size) {
-  void* block_end = static_cast<char*>(ptr) + static_cast<ptrdiff_t>(size);
-  for (auto it = free_blocks_.begin(); it != free_blocks_.end(); ++it) {
-    if (it->second == block_end) {
-      return it;
-    }
-  }
-  return free_blocks_.end();
+  const void* block_end =
+      static_cast<const char*>(ptr) + static_cast<ptrdiff_t>(size);
+  return std::find_if(free_blocks_.begin(),
+                      free_blocks_.end(),
+                      [block_end](const auto& block) {
+                        return block.second == block_end;
+                      });
 }
 
 }  // namespace gradflow
