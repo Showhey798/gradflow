@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../tensor.hpp"
-
 #include <algorithm>
 #include <cmath>
 #include <functional>
 #include <stdexcept>
 #include <vector>
+
+#include "../tensor.hpp"
 
 namespace gradflow {
 
@@ -21,10 +21,10 @@ namespace detail {
  * @throws std::invalid_argument if shapes are not broadcastable
  */
 inline Shape broadcastShapes(const Shape& shape1, const Shape& shape2) {
-    if (!shape1.isBroadcastableWith(shape2)) {
-        throw std::invalid_argument("Shapes are not broadcastable");
-    }
-    return shape1.broadcastWith(shape2);
+  if (!shape1.isBroadcastableWith(shape2)) {
+    throw std::invalid_argument("Shapes are not broadcastable");
+  }
+  return shape1.broadcastWith(shape2);
 }
 
 /**
@@ -37,26 +37,26 @@ inline Shape broadcastShapes(const Shape& shape1, const Shape& shape2) {
  * @param output_shape Shape of the output tensor
  * @return Corresponding indices in the input tensor
  */
-inline std::vector<size_t> getBroadcastIndices(const std::vector<size_t>& output_indices,
-                                               const Shape& input_shape,
-                                               const Shape& output_shape) {
-    const size_t kInputNdim = input_shape.ndim();
-    const size_t kOutputNdim = output_shape.ndim();
-    std::vector<size_t> input_indices(kInputNdim);
+inline std::vector<size_t> getBroadcastIndices(
+    const std::vector<size_t>& output_indices, const Shape& input_shape,
+    const Shape& output_shape) {
+  const size_t kInputNdim = input_shape.ndim();
+  const size_t kOutputNdim = output_shape.ndim();
+  std::vector<size_t> input_indices(kInputNdim);
 
-    // Process dimensions from right to left
-    for (size_t i = 0; i < kOutputNdim; ++i) {
-        const size_t kOutputIdx = output_indices[kOutputNdim - 1 - i];
+  // Process dimensions from right to left
+  for (size_t i = 0; i < kOutputNdim; ++i) {
+    const size_t kOutputIdx = output_indices[kOutputNdim - 1 - i];
 
-        if (i < kInputNdim) {
-            const size_t kInputDim = input_shape[kInputNdim - 1 - i];
-            // If input dimension is 1, broadcast (use index 0)
-            input_indices[kInputNdim - 1 - i] = (kInputDim == 1) ? 0 : kOutputIdx;
-        }
-        // If i >= input_ndim, the dimension doesn't exist in input (implicit 1)
+    if (i < kInputNdim) {
+      const size_t kInputDim = input_shape[kInputNdim - 1 - i];
+      // If input dimension is 1, broadcast (use index 0)
+      input_indices[kInputNdim - 1 - i] = (kInputDim == 1) ? 0 : kOutputIdx;
     }
+    // If i >= input_ndim, the dimension doesn't exist in input (implicit 1)
+  }
 
-    return input_indices;
+  return input_indices;
 }
 
 /**
@@ -67,27 +67,27 @@ inline std::vector<size_t> getBroadcastIndices(const std::vector<size_t>& output
  */
 template <typename Func>
 void iterateIndices(const Shape& shape, Func func) {
-    if (shape.ndim() == 0) {
-        func(std::vector<size_t>{});
-        return;
+  if (shape.ndim() == 0) {
+    func(std::vector<size_t>{});
+    return;
+  }
+
+  std::vector<size_t> indices(shape.ndim(), 0);
+
+  // Helper lambda to recursively iterate through dimensions
+  std::function<void(size_t)> iterate_dim = [&](size_t dim) {
+    if (dim == shape.ndim()) {
+      func(indices);
+      return;
     }
 
-    std::vector<size_t> indices(shape.ndim(), 0);
+    for (size_t i = 0; i < shape[dim]; ++i) {
+      indices[dim] = i;
+      iterate_dim(dim + 1);
+    }
+  };
 
-    // Helper lambda to recursively iterate through dimensions
-    std::function<void(size_t)> iterate_dim = [&](size_t dim) {
-        if (dim == shape.ndim()) {
-            func(indices);
-            return;
-        }
-
-        for (size_t i = 0; i < shape[dim]; ++i) {
-            indices[dim] = i;
-            iterate_dim(dim + 1);
-        }
-    };
-
-    iterate_dim(0);
+  iterate_dim(0);
 }
 
 }  // namespace detail
@@ -103,16 +103,18 @@ void iterateIndices(const Shape& shape, Func func) {
  */
 template <typename T>
 Tensor<T> add(const Tensor<T>& a, const Tensor<T>& b) {
-    Shape result_shape = detail::broadcastShapes(a.shape(), b.shape());
-    Tensor<T> result(result_shape);
+  Shape result_shape = detail::broadcastShapes(a.shape(), b.shape());
+  Tensor<T> result(result_shape);
 
-    detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
-        auto a_indices = detail::getBroadcastIndices(indices, a.shape(), result_shape);
-        auto b_indices = detail::getBroadcastIndices(indices, b.shape(), result_shape);
-        result[indices] = a[a_indices] + b[b_indices];
-    });
+  detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
+    auto a_indices =
+        detail::getBroadcastIndices(indices, a.shape(), result_shape);
+    auto b_indices =
+        detail::getBroadcastIndices(indices, b.shape(), result_shape);
+    result[indices] = a[a_indices] + b[b_indices];
+  });
 
-    return result;
+  return result;
 }
 
 /**
@@ -126,16 +128,18 @@ Tensor<T> add(const Tensor<T>& a, const Tensor<T>& b) {
  */
 template <typename T>
 Tensor<T> sub(const Tensor<T>& a, const Tensor<T>& b) {
-    Shape result_shape = detail::broadcastShapes(a.shape(), b.shape());
-    Tensor<T> result(result_shape);
+  Shape result_shape = detail::broadcastShapes(a.shape(), b.shape());
+  Tensor<T> result(result_shape);
 
-    detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
-        auto a_indices = detail::getBroadcastIndices(indices, a.shape(), result_shape);
-        auto b_indices = detail::getBroadcastIndices(indices, b.shape(), result_shape);
-        result[indices] = a[a_indices] - b[b_indices];
-    });
+  detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
+    auto a_indices =
+        detail::getBroadcastIndices(indices, a.shape(), result_shape);
+    auto b_indices =
+        detail::getBroadcastIndices(indices, b.shape(), result_shape);
+    result[indices] = a[a_indices] - b[b_indices];
+  });
 
-    return result;
+  return result;
 }
 
 /**
@@ -149,16 +153,18 @@ Tensor<T> sub(const Tensor<T>& a, const Tensor<T>& b) {
  */
 template <typename T>
 Tensor<T> mul(const Tensor<T>& a, const Tensor<T>& b) {
-    Shape result_shape = detail::broadcastShapes(a.shape(), b.shape());
-    Tensor<T> result(result_shape);
+  Shape result_shape = detail::broadcastShapes(a.shape(), b.shape());
+  Tensor<T> result(result_shape);
 
-    detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
-        auto a_indices = detail::getBroadcastIndices(indices, a.shape(), result_shape);
-        auto b_indices = detail::getBroadcastIndices(indices, b.shape(), result_shape);
-        result[indices] = a[a_indices] * b[b_indices];
-    });
+  detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
+    auto a_indices =
+        detail::getBroadcastIndices(indices, a.shape(), result_shape);
+    auto b_indices =
+        detail::getBroadcastIndices(indices, b.shape(), result_shape);
+    result[indices] = a[a_indices] * b[b_indices];
+  });
 
-    return result;
+  return result;
 }
 
 /**
@@ -172,16 +178,18 @@ Tensor<T> mul(const Tensor<T>& a, const Tensor<T>& b) {
  */
 template <typename T>
 Tensor<T> div(const Tensor<T>& a, const Tensor<T>& b) {
-    Shape result_shape = detail::broadcastShapes(a.shape(), b.shape());
-    Tensor<T> result(result_shape);
+  Shape result_shape = detail::broadcastShapes(a.shape(), b.shape());
+  Tensor<T> result(result_shape);
 
-    detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
-        auto a_indices = detail::getBroadcastIndices(indices, a.shape(), result_shape);
-        auto b_indices = detail::getBroadcastIndices(indices, b.shape(), result_shape);
-        result[indices] = a[a_indices] / b[b_indices];
-    });
+  detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
+    auto a_indices =
+        detail::getBroadcastIndices(indices, a.shape(), result_shape);
+    auto b_indices =
+        detail::getBroadcastIndices(indices, b.shape(), result_shape);
+    result[indices] = a[a_indices] / b[b_indices];
+  });
 
-    return result;
+  return result;
 }
 
 /**
@@ -193,13 +201,13 @@ Tensor<T> div(const Tensor<T>& a, const Tensor<T>& b) {
  */
 template <typename T>
 Tensor<T> exp(const Tensor<T>& a) {
-    Tensor<T> result(a.shape());
+  Tensor<T> result(a.shape());
 
-    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
-        result[indices] = std::exp(a[indices]);
-    });
+  detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
+    result[indices] = std::exp(a[indices]);
+  });
 
-    return result;
+  return result;
 }
 
 /**
@@ -211,13 +219,13 @@ Tensor<T> exp(const Tensor<T>& a) {
  */
 template <typename T>
 Tensor<T> log(const Tensor<T>& a) {
-    Tensor<T> result(a.shape());
+  Tensor<T> result(a.shape());
 
-    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
-        result[indices] = std::log(a[indices]);
-    });
+  detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
+    result[indices] = std::log(a[indices]);
+  });
 
-    return result;
+  return result;
 }
 
 /**
@@ -229,13 +237,13 @@ Tensor<T> log(const Tensor<T>& a) {
  */
 template <typename T>
 Tensor<T> sqrt(const Tensor<T>& a) {
-    Tensor<T> result(a.shape());
+  Tensor<T> result(a.shape());
 
-    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
-        result[indices] = std::sqrt(a[indices]);
-    });
+  detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
+    result[indices] = std::sqrt(a[indices]);
+  });
 
-    return result;
+  return result;
 }
 
 /**
@@ -249,16 +257,18 @@ Tensor<T> sqrt(const Tensor<T>& a) {
  */
 template <typename T>
 Tensor<T> pow(const Tensor<T>& a, const Tensor<T>& b) {
-    Shape result_shape = detail::broadcastShapes(a.shape(), b.shape());
-    Tensor<T> result(result_shape);
+  Shape result_shape = detail::broadcastShapes(a.shape(), b.shape());
+  Tensor<T> result(result_shape);
 
-    detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
-        auto a_indices = detail::getBroadcastIndices(indices, a.shape(), result_shape);
-        auto b_indices = detail::getBroadcastIndices(indices, b.shape(), result_shape);
-        result[indices] = std::pow(a[a_indices], b[b_indices]);
-    });
+  detail::iterateIndices(result_shape, [&](const std::vector<size_t>& indices) {
+    auto a_indices =
+        detail::getBroadcastIndices(indices, a.shape(), result_shape);
+    auto b_indices =
+        detail::getBroadcastIndices(indices, b.shape(), result_shape);
+    result[indices] = std::pow(a[a_indices], b[b_indices]);
+  });
 
-    return result;
+  return result;
 }
 
 /**
@@ -271,13 +281,13 @@ Tensor<T> pow(const Tensor<T>& a, const Tensor<T>& b) {
  */
 template <typename T>
 Tensor<T> pow(const Tensor<T>& a, T exponent) {
-    Tensor<T> result(a.shape());
+  Tensor<T> result(a.shape());
 
-    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
-        result[indices] = std::pow(a[indices], exponent);
-    });
+  detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
+    result[indices] = std::pow(a[indices], exponent);
+  });
 
-    return result;
+  return result;
 }
 
 /**
@@ -289,13 +299,13 @@ Tensor<T> pow(const Tensor<T>& a, T exponent) {
  */
 template <typename T>
 Tensor<T> tanh(const Tensor<T>& a) {
-    Tensor<T> result(a.shape());
+  Tensor<T> result(a.shape());
 
-    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
-        result[indices] = std::tanh(a[indices]);
-    });
+  detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
+    result[indices] = std::tanh(a[indices]);
+  });
 
-    return result;
+  return result;
 }
 
 /**
@@ -308,13 +318,13 @@ Tensor<T> tanh(const Tensor<T>& a) {
  */
 template <typename T>
 Tensor<T> max(const Tensor<T>& a, T scalar) {
-    Tensor<T> result(a.shape());
+  Tensor<T> result(a.shape());
 
-    detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
-        result[indices] = std::max(a[indices], scalar);
-    });
+  detail::iterateIndices(a.shape(), [&](const std::vector<size_t>& indices) {
+    result[indices] = std::max(a[indices], scalar);
+  });
 
-    return result;
+  return result;
 }
 
 }  // namespace gradflow

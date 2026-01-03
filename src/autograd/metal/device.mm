@@ -1,9 +1,10 @@
-#import <Foundation/Foundation.h>
-#import <Metal/Metal.h>
-
 #include "gradflow/autograd/metal/device.hpp"
 
+#import <Metal/Metal.h>
+
 #include <stdexcept>
+
+#import <Foundation/Foundation.h>
 
 namespace gradflow {
 namespace gpu {

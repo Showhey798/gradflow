@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "../variable.hpp"
 #include "add.hpp"
 #include "loss.hpp"
@@ -8,8 +10,6 @@
 #include "reduction.hpp"
 #include "relu.hpp"
 #include "sigmoid.hpp"
-
-#include <memory>
 
 namespace gradflow {
 
@@ -33,13 +33,13 @@ namespace gradflow {
  */
 template <typename T>
 Variable<T> relu(Variable<T>& x) {
-    auto op = std::make_shared<ReLUOperation<T>>();
-    op->setInputs({&x});
+  auto op = std::make_shared<ReLUOperation<T>>();
+  op->setInputs({&x});
 
-    auto result_data = op->forward({x.data()});
-    bool requires_grad = x.requiresGrad();
+  auto result_data = op->forward({x.data()});
+  bool requires_grad = x.requiresGrad();
 
-    return Variable<T>(std::move(result_data), std::move(op), requires_grad);
+  return Variable<T>(std::move(result_data), std::move(op), requires_grad);
 }
 
 /**
@@ -51,13 +51,13 @@ Variable<T> relu(Variable<T>& x) {
  */
 template <typename T>
 Variable<T> sigmoid(Variable<T>& x) {
-    auto op = std::make_shared<SigmoidOperation<T>>();
-    op->setInputs({&x});
+  auto op = std::make_shared<SigmoidOperation<T>>();
+  op->setInputs({&x});
 
-    auto result_data = op->forward({x.data()});
-    bool requires_grad = x.requiresGrad();
+  auto result_data = op->forward({x.data()});
+  bool requires_grad = x.requiresGrad();
 
-    return Variable<T>(std::move(result_data), std::move(op), requires_grad);
+  return Variable<T>(std::move(result_data), std::move(op), requires_grad);
 }
 
 // ========================================
@@ -68,19 +68,21 @@ Variable<T> sigmoid(Variable<T>& x) {
  * @brief Matrix multiplication for Variables
  *
  * @tparam T Element type
- * @param a First variable (M x K) (non-const reference to build computational graph)
- * @param b Second variable (K x N) (non-const reference to build computational graph)
+ * @param a First variable (M x K) (non-const reference to build computational
+ * graph)
+ * @param b Second variable (K x N) (non-const reference to build computational
+ * graph)
  * @return Variable result (M x N)
  */
 template <typename T>
 Variable<T> matmul(Variable<T>& a, Variable<T>& b) {
-    auto op = std::make_shared<MatMulOperation<T>>();
-    op->setInputs({&a, &b});
+  auto op = std::make_shared<MatMulOperation<T>>();
+  op->setInputs({&a, &b});
 
-    auto result_data = op->forward({a.data(), b.data()});
-    bool requires_grad = a.requiresGrad() || b.requiresGrad();
+  auto result_data = op->forward({a.data(), b.data()});
+  bool requires_grad = a.requiresGrad() || b.requiresGrad();
 
-    return Variable<T>(std::move(result_data), std::move(op), requires_grad);
+  return Variable<T>(std::move(result_data), std::move(op), requires_grad);
 }
 
 // ========================================
@@ -97,13 +99,13 @@ Variable<T> matmul(Variable<T>& a, Variable<T>& b) {
  */
 template <typename T>
 Variable<T> operator+(Variable<T>& a, Variable<T>& b) {
-    auto op = std::make_shared<AddOperation<T>>();
-    op->setInputs({&a, &b});
+  auto op = std::make_shared<AddOperation<T>>();
+  op->setInputs({&a, &b});
 
-    auto result_data = op->forward({a.data(), b.data()});
-    bool requires_grad = a.requiresGrad() || b.requiresGrad();
+  auto result_data = op->forward({a.data(), b.data()});
+  bool requires_grad = a.requiresGrad() || b.requiresGrad();
 
-    return Variable<T>(std::move(result_data), std::move(op), requires_grad);
+  return Variable<T>(std::move(result_data), std::move(op), requires_grad);
 }
 
 /**
@@ -116,13 +118,13 @@ Variable<T> operator+(Variable<T>& a, Variable<T>& b) {
  */
 template <typename T>
 Variable<T> operator*(Variable<T>& a, Variable<T>& b) {
-    auto op = std::make_shared<MulOperation<T>>();
-    op->setInputs({&a, &b});
+  auto op = std::make_shared<MulOperation<T>>();
+  op->setInputs({&a, &b});
 
-    auto result_data = op->forward({a.data(), b.data()});
-    bool requires_grad = a.requiresGrad() || b.requiresGrad();
+  auto result_data = op->forward({a.data(), b.data()});
+  bool requires_grad = a.requiresGrad() || b.requiresGrad();
 
-    return Variable<T>(std::move(result_data), std::move(op), requires_grad);
+  return Variable<T>(std::move(result_data), std::move(op), requires_grad);
 }
 
 // ========================================
@@ -138,13 +140,13 @@ Variable<T> operator*(Variable<T>& a, Variable<T>& b) {
  */
 template <typename T>
 Variable<T> sum(Variable<T>& x) {
-    auto op = std::make_shared<SumOperation<T>>();
-    op->setInputs({&x});
+  auto op = std::make_shared<SumOperation<T>>();
+  op->setInputs({&x});
 
-    auto result_data = op->forward({x.data()});
-    bool requires_grad = x.requiresGrad();
+  auto result_data = op->forward({x.data()});
+  bool requires_grad = x.requiresGrad();
 
-    return Variable<T>(std::move(result_data), std::move(op), requires_grad);
+  return Variable<T>(std::move(result_data), std::move(op), requires_grad);
 }
 
 // ========================================
@@ -155,19 +157,21 @@ Variable<T> sum(Variable<T>& x) {
  * @brief Mean Squared Error loss for Variables
  *
  * @tparam T Element type
- * @param predicted Predicted values (non-const reference to build computational graph)
- * @param target Target values (non-const reference to build computational graph)
+ * @param predicted Predicted values (non-const reference to build computational
+ * graph)
+ * @param target Target values (non-const reference to build computational
+ * graph)
  * @return Variable representing the MSE loss (scalar)
  */
 template <typename T>
 Variable<T> mseLoss(Variable<T>& predicted, Variable<T>& target) {
-    auto op = std::make_shared<MSELossOperation<T>>();
-    op->setInputs({&predicted, &target});
+  auto op = std::make_shared<MSELossOperation<T>>();
+  op->setInputs({&predicted, &target});
 
-    auto result_data = op->forward({predicted.data(), target.data()});
-    bool requires_grad = predicted.requiresGrad() || target.requiresGrad();
+  auto result_data = op->forward({predicted.data(), target.data()});
+  bool requires_grad = predicted.requiresGrad() || target.requiresGrad();
 
-    return Variable<T>(std::move(result_data), std::move(op), requires_grad);
+  return Variable<T>(std::move(result_data), std::move(op), requires_grad);
 }
 
 }  // namespace gradflow

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../operation.hpp"
-#include "../tensor.hpp"
-#include "elementwise.hpp"
-
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include "../operation.hpp"
+#include "../tensor.hpp"
+#include "elementwise.hpp"
 
 namespace gradflow {
 
@@ -26,30 +26,30 @@ namespace gradflow {
  */
 template <typename T>
 class ExpOperation : public Operation<T> {
-public:
-    Tensor<T> forward(const std::vector<Tensor<T>>& inputs) override {
-        if (inputs.size() != 1) {
-            throw std::invalid_argument("ExpOperation requires exactly 1 input");
-        }
-
-        auto result = exp(inputs[0]);
-
-        // Save output for backward (more efficient than recomputing exp)
-        this->saveForBackward("output", result);
-
-        return result;
+ public:
+  Tensor<T> forward(const std::vector<Tensor<T>>& inputs) override {
+    if (inputs.size() != 1) {
+      throw std::invalid_argument("ExpOperation requires exactly 1 input");
     }
 
-    std::vector<Tensor<T>> backward(const Tensor<T>& grad_output) override {
-        auto output = this->getSavedTensor("output");
+    auto result = exp(inputs[0]);
 
-        // grad_x = grad_output * output (since output = exp(x))
-        auto grad_x = mul(grad_output, output);
+    // Save output for backward (more efficient than recomputing exp)
+    this->saveForBackward("output", result);
 
-        return {grad_x};
-    }
+    return result;
+  }
 
-    [[nodiscard]] std::string name() const override { return "ExpOperation"; }
+  std::vector<Tensor<T>> backward(const Tensor<T>& grad_output) override {
+    auto output = this->getSavedTensor("output");
+
+    // grad_x = grad_output * output (since output = exp(x))
+    auto grad_x = mul(grad_output, output);
+
+    return {grad_x};
+  }
+
+  [[nodiscard]] std::string name() const override { return "ExpOperation"; }
 };
 
 }  // namespace gradflow

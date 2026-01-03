@@ -2,12 +2,12 @@
 
 #ifdef __APPLE__
 
-#include "gradflow/autograd/allocator.hpp"
-#include "gradflow/autograd/metal/device.hpp"
-
 #include <cstddef>
 #include <memory>
 #include <unordered_map>
+
+#include "gradflow/autograd/allocator.hpp"
+#include "gradflow/autograd/metal/device.hpp"
 
 namespace gradflow {
 namespace gpu {
@@ -32,97 +32,98 @@ namespace gpu {
  * @endcode
  */
 class MetalAllocator : public DeviceAllocator {
-public:
-    /**
-     * @brief デフォルトアライメント (256 bytes)
-     *
-     * Metal では 256 バイトアライメントが推奨されます。
-     */
-    static constexpr size_t kDefaultAlignment = 256;
+ public:
+  /**
+   * @brief デフォルトアライメント (256 bytes)
+   *
+   * Metal では 256 バイトアライメントが推奨されます。
+   */
+  static constexpr size_t kDefaultAlignment = 256;
 
-    /**
-     * @brief MetalAllocator を構築
-     *
-     * @param device Metal デバイス (非 null)
-     * @param alignment アライメント要件 (デフォルト: 256 bytes)
-     * @throws std::invalid_argument device が null の場合
-     */
-    explicit MetalAllocator(MetalDevice* device, size_t alignment = kDefaultAlignment);
+  /**
+   * @brief MetalAllocator を構築
+   *
+   * @param device Metal デバイス (非 null)
+   * @param alignment アライメント要件 (デフォルト: 256 bytes)
+   * @throws std::invalid_argument device が null の場合
+   */
+  explicit MetalAllocator(MetalDevice* device,
+                          size_t alignment = kDefaultAlignment);
 
-    ~MetalAllocator() override;
+  ~MetalAllocator() override;
 
-    // コピー・ムーブ禁止
-    MetalAllocator(const MetalAllocator&) = delete;
-    MetalAllocator& operator=(const MetalAllocator&) = delete;
-    MetalAllocator(MetalAllocator&&) = delete;
-    MetalAllocator& operator=(MetalAllocator&&) = delete;
+  // コピー・ムーブ禁止
+  MetalAllocator(const MetalAllocator&) = delete;
+  MetalAllocator& operator=(const MetalAllocator&) = delete;
+  MetalAllocator(MetalAllocator&&) = delete;
+  MetalAllocator& operator=(MetalAllocator&&) = delete;
 
-    /**
-     * @brief GPU メモリを割り当て
-     *
-     * MTLBuffer を作成し、Shared storage mode で割り当てます。
-     * Unified Memory により、CPU からも直接アクセス可能です。
-     *
-     * @param size 割り当てサイズ (bytes)
-     * @return 割り当てられたメモリへのポインタ
-     * @throws std::bad_alloc 割り当て失敗時
-     */
-    void* allocate(size_t size) override;
+  /**
+   * @brief GPU メモリを割り当て
+   *
+   * MTLBuffer を作成し、Shared storage mode で割り当てます。
+   * Unified Memory により、CPU からも直接アクセス可能です。
+   *
+   * @param size 割り当てサイズ (bytes)
+   * @return 割り当てられたメモリへのポインタ
+   * @throws std::bad_alloc 割り当て失敗時
+   */
+  void* allocate(size_t size) override;
 
-    /**
-     * @brief GPU メモリを解放
-     *
-     * @param ptr 解放するメモリポインタ
-     */
-    void deallocate(void* ptr) override;
+  /**
+   * @brief GPU メモリを解放
+   *
+   * @param ptr 解放するメモリポインタ
+   */
+  void deallocate(void* ptr) override;
 
-    /**
-     * @brief Metal デバイスを取得
-     * @return Device オブジェクト
-     */
-    [[nodiscard]] Device device() const override;
+  /**
+   * @brief Metal デバイスを取得
+   * @return Device オブジェクト
+   */
+  [[nodiscard]] Device device() const override;
 
-    /**
-     * @brief アライメント要件を取得
-     * @return アライメント (bytes)
-     */
-    [[nodiscard]] size_t alignment() const override { return alignment_; }
+  /**
+   * @brief アライメント要件を取得
+   * @return アライメント (bytes)
+   */
+  [[nodiscard]] size_t alignment() const override { return alignment_; }
 
-    /**
-     * @brief CPU から GPU メモリにデータをコピー
-     *
-     * Unified Memory では通常の memcpy と同等ですが、
-     * 将来的に Private storage mode をサポートする場合に備えて提供します。
-     *
-     * @param dst GPU メモリポインタ
-     * @param src CPU メモリポインタ
-     * @param size コピーサイズ (bytes)
-     */
-    void copyFromCPU(void* dst, const void* src, size_t size);
+  /**
+   * @brief CPU から GPU メモリにデータをコピー
+   *
+   * Unified Memory では通常の memcpy と同等ですが、
+   * 将来的に Private storage mode をサポートする場合に備えて提供します。
+   *
+   * @param dst GPU メモリポインタ
+   * @param src CPU メモリポインタ
+   * @param size コピーサイズ (bytes)
+   */
+  void copyFromCPU(void* dst, const void* src, size_t size);
 
-    /**
-     * @brief GPU から CPU メモリにデータをコピー
-     *
-     * @param dst CPU メモリポインタ
-     * @param src GPU メモリポインタ
-     * @param size コピーサイズ (bytes)
-     */
-    void copyToCPU(void* dst, const void* src, size_t size);
+  /**
+   * @brief GPU から CPU メモリにデータをコピー
+   *
+   * @param dst CPU メモリポインタ
+   * @param src GPU メモリポインタ
+   * @param size コピーサイズ (bytes)
+   */
+  void copyToCPU(void* dst, const void* src, size_t size);
 
-    /**
-     * @brief GPU 操作を同期
-     *
-     * 保留中のすべてのコマンドが完了するまで待機します。
-     */
-    void synchronize();
+  /**
+   * @brief GPU 操作を同期
+   *
+   * 保留中のすべてのコマンドが完了するまで待機します。
+   */
+  void synchronize();
 
-private:
-    MetalDevice* device_;
-    size_t alignment_;
+ private:
+  MetalDevice* device_;
+  size_t alignment_;
 
-    // MTLBuffer の管理用内部データ構造
-    struct BufferInfo;
-    std::unique_ptr<std::unordered_map<void*, BufferInfo>> buffer_map_;
+  // MTLBuffer の管理用内部データ構造
+  struct BufferInfo;
+  std::unique_ptr<std::unordered_map<void*, BufferInfo>> buffer_map_;
 };
 
 /**

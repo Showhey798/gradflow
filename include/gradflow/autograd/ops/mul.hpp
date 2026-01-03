@@ -1,14 +1,14 @@
 #pragma once
 
-#include "../operation.hpp"
-#include "../tensor.hpp"
-#include "elementwise.hpp"
-#include "op_utils.hpp"
-
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include "../operation.hpp"
+#include "../tensor.hpp"
+#include "elementwise.hpp"
+#include "op_utils.hpp"
 
 namespace gradflow {
 
@@ -28,40 +28,40 @@ namespace gradflow {
  */
 template <typename T>
 class MulOperation : public Operation<T> {
-public:
-    Tensor<T> forward(const std::vector<Tensor<T>>& inputs) override {
-        if (inputs.size() != 2) {
-            throw std::invalid_argument("MulOperation requires exactly 2 inputs");
-        }
-
-        const auto& x = inputs[0];
-        const auto& y = inputs[1];
-
-        // Save inputs for backward
-        this->saveForBackward("x", x);
-        this->saveForBackward("y", y);
-
-        return mul(x, y);
+ public:
+  Tensor<T> forward(const std::vector<Tensor<T>>& inputs) override {
+    if (inputs.size() != 2) {
+      throw std::invalid_argument("MulOperation requires exactly 2 inputs");
     }
 
-    std::vector<Tensor<T>> backward(const Tensor<T>& grad_output) override {
-        auto x = this->getSavedTensor("x");
-        auto y = this->getSavedTensor("y");
+    const auto& x = inputs[0];
+    const auto& y = inputs[1];
 
-        // grad_x = grad_output * y
-        auto grad_x = mul(grad_output, y);
+    // Save inputs for backward
+    this->saveForBackward("x", x);
+    this->saveForBackward("y", y);
 
-        // grad_y = grad_output * x
-        auto grad_y = mul(grad_output, x);
+    return mul(x, y);
+  }
 
-        // Handle broadcasting
-        grad_x = ops::sumToShape(grad_x, x.shape());
-        grad_y = ops::sumToShape(grad_y, y.shape());
+  std::vector<Tensor<T>> backward(const Tensor<T>& grad_output) override {
+    auto x = this->getSavedTensor("x");
+    auto y = this->getSavedTensor("y");
 
-        return {grad_x, grad_y};
-    }
+    // grad_x = grad_output * y
+    auto grad_x = mul(grad_output, y);
 
-    [[nodiscard]] std::string name() const override { return "MulOperation"; }
+    // grad_y = grad_output * x
+    auto grad_y = mul(grad_output, x);
+
+    // Handle broadcasting
+    grad_x = ops::sumToShape(grad_x, x.shape());
+    grad_y = ops::sumToShape(grad_y, y.shape());
+
+    return {grad_x, grad_y};
+  }
+
+  [[nodiscard]] std::string name() const override { return "MulOperation"; }
 };
 
 }  // namespace gradflow

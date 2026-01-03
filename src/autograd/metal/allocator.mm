@@ -1,7 +1,8 @@
-#import <Metal/Metal.h>
-
 #include "gradflow/autograd/metal/allocator.hpp"
+
 #include "gradflow/autograd/metal/device.hpp"
+
+#import <Metal/Metal.h>
 
 #include <cstring>
 #include <stdexcept>
@@ -27,7 +28,8 @@ struct MetalAllocator::BufferInfo {
 };
 
 MetalAllocator::MetalAllocator(MetalDevice* device, size_t alignment)
-    : device_(device), alignment_(alignment) {
+    : device_(device),
+      alignment_(alignment) {
     if (!device_) {
         throw std::invalid_argument("MetalDevice cannot be null");
     }
@@ -52,8 +54,8 @@ void* MetalAllocator::allocate(size_t size) {
         id<MTLDevice> mtl_device = (__bridge id<MTLDevice>)device_->getMetalDevice();
 
         // Shared storage mode: CPU と GPU 両方からアクセス可能
-        id<MTLBuffer> buffer =
-            [mtl_device newBufferWithLength:aligned_size options:MTLResourceStorageModeShared];
+        id<MTLBuffer> buffer = [mtl_device newBufferWithLength:aligned_size
+                                                       options:MTLResourceStorageModeShared];
 
         if (!buffer) {
             throw std::bad_alloc();
@@ -62,7 +64,8 @@ void* MetalAllocator::allocate(size_t size) {
         void* ptr = buffer.contents;
 
         // BufferInfo を登録
-        buffer_map_->emplace(std::piecewise_construct, std::forward_as_tuple(ptr),
+        buffer_map_->emplace(std::piecewise_construct,
+                             std::forward_as_tuple(ptr),
                              std::forward_as_tuple(buffer, aligned_size));
 
         [buffer release];  // BufferInfo が retain しているので release
