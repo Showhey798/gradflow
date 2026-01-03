@@ -262,3 +262,78 @@ TEST_F(CPUOptimizedTest, Performance_MatMul) {
   alignedFree(b);
   alignedFree(a);
 }
+
+// Test 8: SIMD 剰余処理のテスト（8 の倍数でないサイズ）
+TEST_F(CPUOptimizedTest, AddSIMD_NonMultipleOf8) {
+  constexpr size_t size = 1025;  // 8 で割り切れない
+
+  float* a = static_cast<float*>(alignedAlloc(size * sizeof(float)));
+  float* b = static_cast<float*>(alignedAlloc(size * sizeof(float)));
+  float* c = static_cast<float*>(alignedAlloc(size * sizeof(float)));
+
+  for (size_t i = 0; i < size; ++i) {
+    a[i] = static_cast<float>(i);
+    b[i] = static_cast<float>(i * 2);
+  }
+
+  kernels_->add(a, b, c, size);
+
+  // 特に最後の要素（剰余部分）を確認
+  for (size_t i = 0; i < size; ++i) {
+    EXPECT_FLOAT_EQ(c[i], a[i] + b[i]) << "Failed at index " << i;
+  }
+
+  alignedFree(c);
+  alignedFree(b);
+  alignedFree(a);
+}
+
+// Test 9: 非正方行列のテスト
+TEST_F(CPUOptimizedTest, BlockedMatMul_NonSquare) {
+  constexpr size_t m = 1, k = 1000, n = 1;
+
+  float* a = static_cast<float*>(alignedAlloc(m * k * sizeof(float)));
+  float* b = static_cast<float*>(alignedAlloc(k * n * sizeof(float)));
+  float* c = static_cast<float*>(alignedAlloc(m * n * sizeof(float)));
+
+  for (size_t i = 0; i < m * k; ++i) {
+    a[i] = 1.0f;
+  }
+  for (size_t i = 0; i < k * n; ++i) {
+    b[i] = 2.0f;
+  }
+
+  kernels_->matmul(a, b, c, m, k, n);
+
+  // Expected: c[0] = 1*2*1000 = 2000
+  EXPECT_FLOAT_EQ(c[0], 2000.0f);
+
+  alignedFree(c);
+  alignedFree(b);
+  alignedFree(a);
+}
+
+// Test 10: ゼロ除算のテスト
+TEST_F(CPUOptimizedTest, DivSIMD_DivideByZero) {
+  constexpr size_t size = 8;
+
+  float* a = static_cast<float*>(alignedAlloc(size * sizeof(float)));
+  float* b = static_cast<float*>(alignedAlloc(size * sizeof(float)));
+  float* c = static_cast<float*>(alignedAlloc(size * sizeof(float)));
+
+  for (size_t i = 0; i < size; ++i) {
+    a[i] = 10.0f;
+    b[i] = 0.0f;  // ゼロ除算
+  }
+
+  kernels_->div(a, b, c, size);
+
+  // IEEE 754: 10.0f / 0.0f = +inf
+  for (size_t i = 0; i < size; ++i) {
+    EXPECT_TRUE(std::isinf(c[i])) << "Expected inf at index " << i;
+  }
+
+  alignedFree(c);
+  alignedFree(b);
+  alignedFree(a);
+}

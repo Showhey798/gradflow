@@ -6,7 +6,6 @@
 #endif
 
 #include <algorithm>
-#include <cstring>
 
 namespace gradflow {
 namespace cpu {
@@ -111,8 +110,16 @@ void matmul_block(const float* a, const float* b, float* c, size_t m, size_t k,
 
 void CPUKernels::matmul(const float* a, const float* b, float* c, size_t m,
                         size_t k, size_t n) {
-  // C を 0 で初期化
-  std::memset(c, 0, m * n * sizeof(float));
+  // 入力検証
+  if (a == nullptr || b == nullptr || c == nullptr) {
+    return;
+  }
+  if (m == 0 || k == 0 || n == 0) {
+    return;
+  }
+
+  // C を 0 で初期化（型安全な方法）
+  std::fill_n(c, m * n, 0.0f);
 
 #ifdef _OPENMP
 // OpenMP 並列化: ブロックごとに並列実行

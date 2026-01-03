@@ -1,7 +1,9 @@
 // src/autograd/cpu/simd_ops.hpp
 #pragma once
 
+#include <cassert>
 #include <cstddef>
+#include <cstdint>
 
 // x86_64 アーキテクチャでのみ AVX2 intrinsics をインクルード
 #if defined(__x86_64__) || defined(_M_X64)
@@ -24,6 +26,15 @@ namespace simd {
  * @param size 要素数
  */
 inline void add_avx2(const float* a, const float* b, float* c, size_t size) {
+#ifndef NDEBUG
+  assert(reinterpret_cast<uintptr_t>(a) % 32 == 0 &&
+         "a must be 32-byte aligned");
+  assert(reinterpret_cast<uintptr_t>(b) % 32 == 0 &&
+         "b must be 32-byte aligned");
+  assert(reinterpret_cast<uintptr_t>(c) % 32 == 0 &&
+         "c must be 32-byte aligned");
+#endif
+
   size_t i = 0;
 
   // AVX2: 8 個の float を同時処理
@@ -51,6 +62,15 @@ inline void add_avx2(const float* a, const float* b, float* c, size_t size) {
  * @param size 要素数
  */
 inline void mul_avx2(const float* a, const float* b, float* c, size_t size) {
+#ifndef NDEBUG
+  assert(reinterpret_cast<uintptr_t>(a) % 32 == 0 &&
+         "a must be 32-byte aligned");
+  assert(reinterpret_cast<uintptr_t>(b) % 32 == 0 &&
+         "b must be 32-byte aligned");
+  assert(reinterpret_cast<uintptr_t>(c) % 32 == 0 &&
+         "c must be 32-byte aligned");
+#endif
+
   size_t i = 0;
 
   for (; i + 8 <= size; i += 8) {
@@ -74,6 +94,15 @@ inline void mul_avx2(const float* a, const float* b, float* c, size_t size) {
  * @param size 要素数
  */
 inline void sub_avx2(const float* a, const float* b, float* c, size_t size) {
+#ifndef NDEBUG
+  assert(reinterpret_cast<uintptr_t>(a) % 32 == 0 &&
+         "a must be 32-byte aligned");
+  assert(reinterpret_cast<uintptr_t>(b) % 32 == 0 &&
+         "b must be 32-byte aligned");
+  assert(reinterpret_cast<uintptr_t>(c) % 32 == 0 &&
+         "c must be 32-byte aligned");
+#endif
+
   size_t i = 0;
 
   for (; i + 8 <= size; i += 8) {
@@ -97,6 +126,15 @@ inline void sub_avx2(const float* a, const float* b, float* c, size_t size) {
  * @param size 要素数
  */
 inline void div_avx2(const float* a, const float* b, float* c, size_t size) {
+#ifndef NDEBUG
+  assert(reinterpret_cast<uintptr_t>(a) % 32 == 0 &&
+         "a must be 32-byte aligned");
+  assert(reinterpret_cast<uintptr_t>(b) % 32 == 0 &&
+         "b must be 32-byte aligned");
+  assert(reinterpret_cast<uintptr_t>(c) % 32 == 0 &&
+         "c must be 32-byte aligned");
+#endif
+
   size_t i = 0;
 
   for (; i + 8 <= size; i += 8) {
