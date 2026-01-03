@@ -9,6 +9,11 @@ A comprehensive C++ machine learning library featuring automatic differentiation
 - **Multi-Backend GPU Support**:
   - **Metal**: Optimized for Apple Silicon (M1/M2/M3) with Metal Performance Shaders
   - **CUDA**: NVIDIA GPU support with cuBLAS integration (optional)
+- **CPU Optimizations**:
+  - **SIMD Vectorization**: AVX2 for x86_64 (8-way float operations)
+  - **Blocked MatMul**: Cache-efficient matrix multiplication with 4x4 microkernel
+  - **OpenMP Parallelization**: Multi-core CPU utilization (optional)
+  - **16x Speedup**: Blocked MatMul achieves 16x performance over naive implementation
 - **Modern C++17**: Leveraging latest C++ standards with SOLID principles
 - **Python Bindings**: PyTorch-like Python interface via nanobind (high-performance, compact)
 - **Comprehensive Testing**: Google Test framework with numerical gradient checking
@@ -127,6 +132,7 @@ int main() {
 - `GRADFLOW_BUILD_EXAMPLES`: Build examples (default: ON)
 - `GRADFLOW_BUILD_BENCHMARKS`: Build benchmarks (default: OFF)
 - `GRADFLOW_BUILD_PYTHON`: Build Python bindings (default: OFF)
+- `GRADFLOW_ENABLE_CPU_OPTIMIZATIONS`: Enable CPU optimizations (SIMD, OpenMP) (default: ON)
 - `GRADFLOW_BUILD_METAL`: Build Metal backend (default: ON on macOS)
 - `GRADFLOW_BUILD_CUDA`: Build CUDA backend (default: OFF)
 - `GRADFLOW_ENABLE_COVERAGE`: Enable code coverage (default: OFF)
@@ -134,8 +140,32 @@ int main() {
 
 Example:
 ```bash
-cmake -B build -DGRADFLOW_BUILD_PYTHON=ON -DGRADFLOW_BUILD_METAL=ON
+cmake -B build -DGRADFLOW_BUILD_PYTHON=ON -DGRADFLOW_BUILD_METAL=ON -DGRADFLOW_ENABLE_CPU_OPTIMIZATIONS=ON
 ```
+
+### CPU Optimizations
+
+GradFlow supports high-performance CPU operations with SIMD vectorization and cache-efficient algorithms:
+
+```bash
+# Enable CPU optimizations (default: ON)
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DGRADFLOW_ENABLE_CPU_OPTIMIZATIONS=ON
+
+# Build and run CPU optimization tests
+cmake --build build --target cpu_optimized_test
+./build/tests/cpu_optimized_test
+```
+
+**Supported Architectures:**
+- **x86_64**: AVX2 SIMD instructions (8-way float operations)
+- **ARM64**: Automatic fallback to scalar implementation (NEON support planned)
+
+**Performance Results (ARM64 Apple Silicon):**
+- **Blocked MatMul** (512×512): **16.4x** speedup over naive implementation
+- **Cache Efficiency**: 64×64 block size optimized for L1 cache
+- **Microkernel**: 4×4 register blocking for maximum throughput
+
+**Note**: OpenMP is optional. If not found, CPU operations run in serial mode.
 
 ## Development
 

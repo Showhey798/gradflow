@@ -1,6 +1,44 @@
 # Source files for the compiled part of the library
 set(GRADFLOW_SOURCES autograd/device.cpp autograd/memory_pool.cpp)
 
+# CPU 最適化サポート
+if(GRADFLOW_ENABLE_CPU_OPTIMIZATIONS)
+  message(STATUS "Enabling CPU optimizations")
+
+  # アーキテクチャに応じた SIMD フラグ
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+    # x86_64 の場合は AVX2 フラグ
+    if(MSVC)
+      set(SIMD_FLAGS /arch:AVX2)
+    else()
+      set(SIMD_FLAGS -mavx2 -mfma)
+    endif()
+    message(STATUS "CPU Architecture: x86_64, enabling AVX2")
+  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+    # ARM の場合は NEON は標準で有効なのでフラグ不要
+    set(SIMD_FLAGS "")
+    message(STATUS "CPU Architecture: ARM64, NEON is enabled by default")
+  else()
+    # その他のアーキテクチャはスカラー実装
+    set(SIMD_FLAGS "")
+    message(
+      WARNING
+        "Unknown CPU architecture, SIMD optimizations may not be available")
+  endif()
+
+  # OpenMP サポート
+  find_package(OpenMP)
+  if(OpenMP_CXX_FOUND)
+    message(STATUS "OpenMP found: ${OpenMP_CXX_VERSION}")
+  else()
+    message(WARNING "OpenMP not found, parallel MatMul will be disabled")
+  endif()
+
+  # CPU 最適化カーネルのソース
+  list(APPEND GRADFLOW_SOURCES autograd/cpu/kernels_avx2.cpp
+       autograd/cpu/matmul_blocked.cpp)
+endif()
+
 # Metal サポート (macOS のみ)
 if(APPLE AND GRADFLOW_ENABLE_METAL)
   message(STATUS "Enabling Metal GPU backend")
@@ -23,6 +61,23 @@ target_compile_features(gradflow_impl PUBLIC cxx_std_17)
 # Link dependencies
 if(Eigen3_FOUND)
   target_link_libraries(gradflow_impl PUBLIC Eigen3::Eigen)
+endif()
+
+# CPU 最適化の設定
+if(GRADFLOW_ENABLE_CPU_OPTIMIZATIONS)
+  # SIMD コンパイルフラグを追加（空文字列でない場合のみ）
+  if(SIMD_FLAGS)
+    target_compile_options(gradflow_impl PRIVATE ${SIMD_FLAGS})
+  endif()
+
+  # OpenMP をリンク
+  if(OpenMP_CXX_FOUND)
+    target_link_libraries(gradflow_impl PUBLIC OpenMP::OpenMP_CXX)
+  endif()
+
+  # CPU 最適化を有効化するマクロを定義
+  target_compile_definitions(gradflow_impl
+                             PUBLIC GRADFLOW_HAS_CPU_OPTIMIZATIONS)
 endif()
 
 # Metal サポートの設定
