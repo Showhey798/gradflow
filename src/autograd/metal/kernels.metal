@@ -84,6 +84,10 @@ kernel void sub_kernel(device const float* a [[buffer(0)]],
  * Thread Group Size: 256
  * Grid Size: (size + 255) / 256
  *
+ * ゼロ除算対策:
+ * - divisor が epsilon (1e-7) より小さい場合、epsilon でクリッピング
+ * - これにより Inf/NaN の生成を防ぎ、数値的安定性を向上
+ *
  * @param a 入力配列 A [[buffer(0)]]
  * @param b 入力配列 B [[buffer(1)]]
  * @param c 出力配列 C [[buffer(2)]]
@@ -96,7 +100,12 @@ kernel void div_kernel(device const float* a [[buffer(0)]],
                        constant uint& size [[buffer(3)]],
                        uint gid [[thread_position_in_grid]]) {
   if (gid < size) {
-    c[gid] = a[gid] / b[gid];
+    float divisor = b[gid];
+    // ゼロ除算を防ぐため、epsilon (1e-7) でクリッピング
+    if (fabs(divisor) < 1e-7f) {
+      divisor = (divisor >= 0.0f) ? 1e-7f : -1e-7f;
+    }
+    c[gid] = a[gid] / divisor;
   }
 }
 
@@ -128,6 +137,7 @@ kernel void sum_kernel_stage1(
     threadgroup float* local_sum [[threadgroup(0)]],
     uint gid [[thread_position_in_grid]],
     uint tid [[thread_position_in_threadgroup]],
+    uint grid_id [[threadgroup_position_in_grid]],
     uint tpg [[threads_per_threadgroup]]) {
   // Load data into threadgroup memory
   local_sum[tid] = (gid < size) ? input[gid] : 0.0f;
@@ -143,8 +153,7 @@ kernel void sum_kernel_stage1(
 
   // Write partial sum (thread 0 in each threadgroup writes the result)
   if (tid == 0) {
-    uint group_id = gid / tpg;
-    partial_sums[group_id] = local_sum[0];
+    partial_sums[grid_id] = local_sum[0];
   }
 }
 

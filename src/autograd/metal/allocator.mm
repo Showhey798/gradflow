@@ -113,6 +113,20 @@ void MetalAllocator::synchronize() {
     }
 }
 
+void* MetalAllocator::getBuffer(void* ptr) {
+    if (!ptr) {
+        return nullptr;
+    }
+
+    auto it = buffer_map_->find(ptr);
+    if (it == buffer_map_->end()) {
+        return nullptr;
+    }
+
+    // MTLBuffer を void* として返す（使用側で __bridge でキャスト）
+    return (__bridge void*)it->second.buffer;
+}
+
 // シングルトン
 std::shared_ptr<DeviceAllocator> getDefaultMetalAllocator() {
     static std::shared_ptr<DeviceAllocator> allocator = []() -> std::shared_ptr<DeviceAllocator> {

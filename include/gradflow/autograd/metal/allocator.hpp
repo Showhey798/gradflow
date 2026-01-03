@@ -117,6 +117,21 @@ class MetalAllocator : public DeviceAllocator {
    */
   void synchronize();
 
+  /**
+   * @brief メモリポインタから MTLBuffer を取得
+   *
+   * このメソッドは Metal カーネル実行時に使用します。
+   * allocate() で確保されたメモリポインタから、対応する MTLBuffer
+   * を取得します。
+   *
+   * @param ptr allocate() で確保されたメモリポインタ
+   * @return MTLBuffer (void* にキャスト)、見つからない場合は nullptr
+   *
+   * @note 返されるポインタは void* ですが、実際には id<MTLBuffer> です。
+   *       使用側で (__bridge id<MTLBuffer>) でキャストしてください。
+   */
+  void* getBuffer(void* ptr);
+
  private:
   MetalDevice* device_;
   size_t alignment_;

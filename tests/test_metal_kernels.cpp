@@ -339,7 +339,68 @@ TEST_F(MetalKernelsTest, CPUGPUConsistency_Add) {
 }
 
 // ===================================================================
-// Test 10: パフォーマンス比較 (GPU vs CPU - large array)
+// Test 10: ゼロ除算対策の検証 (Div)
+// ===================================================================
+
+TEST_F(MetalKernelsTest, DivKernel_ZeroDivision) {
+  constexpr size_t size = 128;
+
+  float* a = static_cast<float*>(allocator_->allocate(size * sizeof(float)));
+  float* b = static_cast<float*>(allocator_->allocate(size * sizeof(float)));
+  float* c = static_cast<float*>(allocator_->allocate(size * sizeof(float)));
+
+  for (size_t i = 0; i < size; ++i) {
+    a[i] = static_cast<float>(i);
+    b[i] = (i % 10 == 0) ? 0.0f : 1.0f;  // 10 個ごとにゼロ
+  }
+
+  kernels_->div(a, b, c, size);
+  kernels_->synchronize();
+
+  // すべての結果が有限値であることを確認
+  for (size_t i = 0; i < size; ++i) {
+    EXPECT_TRUE(std::isfinite(c[i]))
+        << "Result at index " << i << " is not finite";
+  }
+
+  // ゼロ除算箇所でも適切な値が返されることを確認（epsilon でクリッピング）
+  // b[0] = 0, a[0] = 0 → c[0] = 0 / 1e-7 = 0
+  // b[10] = 0, a[10] = 10 → c[10] = 10 / 1e-7 = 大きな値（有限）
+  EXPECT_TRUE(std::isfinite(c[0]));
+  EXPECT_TRUE(std::isfinite(c[10]));
+
+  allocator_->deallocate(c);
+  allocator_->deallocate(b);
+  allocator_->deallocate(a);
+}
+
+// ===================================================================
+// Test 11: 非 256 倍数サイズの Sum テスト
+// ===================================================================
+
+TEST_F(MetalKernelsTest, SumKernel_NonMultipleSize) {
+  constexpr size_t size = 300;  // 256 の倍数ではない
+
+  float* input =
+      static_cast<float*>(allocator_->allocate(size * sizeof(float)));
+  float* output = static_cast<float*>(allocator_->allocate(sizeof(float)));
+
+  for (size_t i = 0; i < size; ++i) {
+    input[i] = 1.0f;
+  }
+
+  kernels_->sum(input, output, size);
+  kernels_->synchronize();
+
+  // 期待値: 300
+  EXPECT_FLOAT_EQ(output[0], 300.0f);
+
+  allocator_->deallocate(output);
+  allocator_->deallocate(input);
+}
+
+// ===================================================================
+// Test 12: パフォーマンス比較 (GPU vs CPU - large array)
 // ===================================================================
 
 TEST_F(MetalKernelsTest, PerformanceComparison_Add) {

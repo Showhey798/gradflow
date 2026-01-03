@@ -40,46 +40,57 @@ public:
         device = (id<MTLDevice>)metal_device->getMetalDevice();
         command_queue = (id<MTLCommandQueue>)metal_device->getMetalCommandQueue();
 
-        // Load Metal library from embedded source code
         NSError* error = nil;
 
-        // Read Metal source file from the source directory
-        // Note: In a real deployment, this would be loaded from a bundle or embedded
-        const char* source_path = __FILE__;  // kernels.mm path
-        std::string source_dir(source_path);
-        size_t last_slash = source_dir.find_last_of("/\\");
-        if (last_slash != std::string::npos) {
-            source_dir = source_dir.substr(0, last_slash);
+        // 優先順位 1: 事前コンパイルされた .metallib をロード（デプロイメント向け）
+#ifdef GRADFLOW_METAL_LIB_PATH
+        NSString* metallibPath = @GRADFLOW_METAL_LIB_PATH;
+        library = [device newLibraryWithFile:metallibPath error:&error];
+
+        if (!library) {
+            error = nil;  // エラーをリセットして次のフォールバックへ
         }
-        std::string metal_source_path = source_dir + "/kernels.metal";
+#endif
 
-        NSString* sourcePath = [NSString stringWithUTF8String:metal_source_path.c_str()];
-        NSString* sourceCode = [NSString stringWithContentsOfFile:sourcePath
-                                                         encoding:NSUTF8StringEncoding
-                                                            error:&error];
+        // 優先順位 2: ソースディレクトリの .metal ファイルをロード（開発環境向け）
+        if (!library) {
+            const char* source_path = __FILE__;  // kernels.mm path
+            std::string source_dir(source_path);
+            size_t last_slash = source_dir.find_last_of("/\\");
+            if (last_slash != std::string::npos) {
+                source_dir = source_dir.substr(0, last_slash);
+            }
+            std::string metal_source_path = source_dir + "/kernels.metal";
 
-        if (!sourceCode) {
-            // Fallback: try default library
+            NSString* sourcePath = [NSString stringWithUTF8String:metal_source_path.c_str()];
+            NSString* sourceCode = [NSString stringWithContentsOfFile:sourcePath
+                                                             encoding:NSUTF8StringEncoding
+                                                                error:&error];
+
+            if (sourceCode) {
+                // Runtime コンパイル
+                library = [device newLibraryWithSource:sourceCode options:nil error:&error];
+            }
+        }
+
+        // 優先順位 3: デフォルトライブラリ（アプリケーションバンドルに含まれる場合）
+        if (!library) {
             library = [device newDefaultLibrary];
+        }
 
-            if (!library) {
-                std::string error_msg = "Failed to load Metal source file: " + metal_source_path;
-                if (error) {
-                    error_msg += "\n" + std::string([[error localizedDescription] UTF8String]);
-                }
-                throw std::runtime_error(error_msg);
+        // すべてのフォールバックが失敗
+        if (!library) {
+            std::string error_msg = "Failed to load Metal library. Tried:\n";
+#ifdef GRADFLOW_METAL_LIB_PATH
+            error_msg += "1. Precompiled .metallib: " GRADFLOW_METAL_LIB_PATH "\n";
+#endif
+            error_msg += "2. Runtime compile from source\n";
+            error_msg += "3. Default library (app bundle)\n";
+            if (error) {
+                error_msg +=
+                    "Last error: " + std::string([[error localizedDescription] UTF8String]);
             }
-        } else {
-            // Compile source code at runtime
-            library = [device newLibraryWithSource:sourceCode options:nil error:&error];
-
-            if (!library) {
-                std::string error_msg = "Failed to compile Metal library from source";
-                if (error) {
-                    error_msg += ": " + std::string([[error localizedDescription] UTF8String]);
-                }
-                throw std::runtime_error(error_msg);
-            }
+            throw std::runtime_error(error_msg);
         }
 
         // Create compute pipeline states
