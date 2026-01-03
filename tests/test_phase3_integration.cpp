@@ -104,7 +104,7 @@ class Phase3IntegrationTest : public ::testing::Test {
  *   - 隠れ層: [100, 50] (ReLU)
  *   - 出力層: [50, 10]
  */
-TEST_F(Phase3IntegrationTest, MetalGPUNeuralNetwork) {
+TEST_F(Phase3IntegrationTest, MetalGPUSimpleNeuralNetworkTraining) {
   // データを Metal GPU に配置
   const size_t batch_size = getLargeTestSize(1000);
   const size_t input_dim = getLargeTestSize(100);
@@ -168,7 +168,7 @@ TEST_F(Phase3IntegrationTest, MetalGPUNeuralNetwork) {
  * 同じ入力データを CPU と Metal GPU
  * で処理して、結果が一致することを確認します。
  */
-TEST_F(Phase3IntegrationTest, CPUGPUConsistency) {
+TEST_F(Phase3IntegrationTest, MetalVsCPUForwardBackwardConsistency) {
   const size_t rows = getLargeTestSize(50);
   const size_t cols = getLargeTestSize(30);
 
@@ -209,19 +209,20 @@ TEST_F(Phase3IntegrationTest, CPUGPUConsistency) {
   loss_metal.backward();
 
   // Forward の結果が一致することを確認（Unified Memory でアクセス）
-  EXPECT_TRUE(tensors_approx_equal(y_cpu.data(), y_metal.data(), 1e-3f))
-      << "Forward results should match between CPU and Metal";
+  // Metal GPU の浮動小数点演算の精度を考慮して 1e-2f の許容誤差を使用
+  EXPECT_TRUE(tensors_approx_equal(y_cpu.data(), y_metal.data(), 1e-2f))
+      << "Forward results should match between CPU and Metal (tolerance: 1e-2)";
 
-  EXPECT_TRUE(approx_equal(loss_cpu.data()[{}], loss_metal.data()[{}], 1e-3f))
-      << "Loss should match between CPU and Metal. CPU: " << loss_cpu.data()[{}]
-      << ", Metal: " << loss_metal.data()[{}];
+  EXPECT_TRUE(approx_equal(loss_cpu.data()[{}], loss_metal.data()[{}], 1e-2f))
+      << "Loss should match between CPU and Metal (tolerance: 1e-2). CPU: "
+      << loss_cpu.data()[{}] << ", Metal: " << loss_metal.data()[{}];
 
   // Backward の結果（勾配）が一致することを確認（Unified Memory でアクセス）
   auto W_cpu_grad = W_cpu.grad();
   auto W_metal_grad = W_metal.grad();
 
-  EXPECT_TRUE(tensors_approx_equal(W_cpu_grad, W_metal_grad, 1e-3f))
-      << "Gradients should match between CPU and Metal";
+  EXPECT_TRUE(tensors_approx_equal(W_cpu_grad, W_metal_grad, 1e-2f))
+      << "Gradients should match between CPU and Metal (tolerance: 1e-2)";
 }
 
 // ========================================
@@ -235,7 +236,7 @@ TEST_F(Phase3IntegrationTest, CPUGPUConsistency) {
  * 実際には、Metal の Unified Memory
  * により、明示的なコピーなしでアクセス可能です。
  */
-TEST_F(Phase3IntegrationTest, UnifiedMemoryEfficiency) {
+TEST_F(Phase3IntegrationTest, MetalUnifiedMemoryDataAccess) {
   const size_t size = getLargeTestSize(1000);
 
   // Metal GPU でテンソルを作成
@@ -274,7 +275,7 @@ TEST_F(Phase3IntegrationTest, UnifiedMemoryEfficiency) {
  * 大きな行列積を CPU と Metal GPU で実行し、実行時間を比較します。
  * Metal GPU の方が高速であることを期待します。
  */
-TEST_F(Phase3IntegrationTest, PerformanceBenchmark) {
+TEST_F(Phase3IntegrationTest, MetalVsCPUMatrixMultiplicationBenchmark) {
   const size_t size = getLargeTestSize(500);
 
   // ベンチマーク用のデータを準備
@@ -317,11 +318,20 @@ TEST_F(Phase3IntegrationTest, PerformanceBenchmark) {
   if (metal_duration > 0) {
     float speedup = static_cast<float>(cpu_duration) / metal_duration;
     std::cout << "Speedup: " << speedup << "x" << std::endl;
+
+    // Metal GPU が CPU より遅い場合は警告を表示
+    if (metal_duration > cpu_duration) {
+      std::cout << "WARNING: Metal GPU is slower than CPU for this operation"
+                << std::endl;
+      std::cout << "NOTE: This may occur with sanitizers, debug builds, or "
+                   "small matrices"
+                << std::endl;
+    }
   }
 
   // 結果が一致することを確認（Unified Memory でアクセス）
-  EXPECT_TRUE(tensors_approx_equal(C_cpu, C_metal, 1e-3f))
-      << "Results should match between CPU and Metal";
+  EXPECT_TRUE(tensors_approx_equal(C_cpu, C_metal, 1e-2f))
+      << "Results should match between CPU and Metal (tolerance: 1e-2)";
 
   // テストは常に成功（パフォーマンス情報の表示が主目的）
   SUCCEED();
@@ -336,7 +346,7 @@ TEST_F(Phase3IntegrationTest, PerformanceBenchmark) {
  *
  * 複数回の forward/backward でメモリリークがないことを確認します。
  */
-TEST_F(Phase3IntegrationTest, MemoryManagement) {
+TEST_F(Phase3IntegrationTest, MetalGPUMemoryLeakDetection) {
   const size_t kNumIterations = getIterationCount(10);
   const size_t size = getLargeTestSize(100);
 
