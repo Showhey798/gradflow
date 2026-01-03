@@ -122,6 +122,12 @@ if(APPLE AND GRADFLOW_ENABLE_METAL)
                        test_phase3_integration.cpp TIMEOUT 300)
 endif()
 
+# Phase 4: CPU optimization tests
+if(GRADFLOW_ENABLE_CPU_OPTIMIZATIONS)
+  fullscratch_add_test(cpu_optimized_test SOURCES test_cpu_optimized.cpp
+                       TIMEOUT 300)
+endif()
+
 # TODO: Implement these tests # Matrix operations tests
 # fullscratch_add_test(matrix_test SOURCES test_matrix.cpp )
 #
@@ -172,6 +178,11 @@ set(ALL_TESTS
 if(APPLE AND GRADFLOW_ENABLE_METAL)
   list(APPEND ALL_TESTS metal_device_test metal_kernels_test
        metal_ops_grad_test phase3_integration_test)
+endif()
+
+# Add CPU optimization tests if enabled
+if(GRADFLOW_ENABLE_CPU_OPTIMIZATIONS)
+  list(APPEND ALL_TESTS cpu_optimized_test)
 endif()
 
 add_custom_target(

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<results version="2">
+    <cppcheck version="2.13.0"/>
+    <errors>
+        <error id="shadowVariable" severity="style" msg="Local variable &apos;it&apos; shadows outer variable" verbose="Local variable &apos;it&apos; shadows outer variable" cwe="398" file0="src/autograd/memory_pool.cpp">
+            <location file="src/autograd/memory_pool.cpp" line="139" column="17" info="Shadow variable"/>
+            <location file="src/autograd/memory_pool.cpp" line="106" column="8" info="Shadowed declaration"/>
+            <symbol>it</symbol>
+        </error>
+        <error id="shadowVariable" severity="style" msg="Local variable &apos;it&apos; shadows outer variable" verbose="Local variable &apos;it&apos; shadows outer variable" cwe="398" file0="src/autograd/memory_pool.cpp">
+            <location file="src/autograd/memory_pool.cpp" line="159" column="15" info="Shadow variable"/>
+            <location file="src/autograd/memory_pool.cpp" line="106" column="8" info="Shadowed declaration"/>
+            <symbol>it</symbol>
+        </error>
+        <error id="constVariablePointer" severity="style" msg="Variable &apos;prev_end&apos; can be declared as pointer to const" verbose="Variable &apos;prev_end&apos; can be declared as pointer to const" cwe="398" file0="src/autograd/memory_pool.cpp">
+            <location file="src/autograd/memory_pool.cpp" line="129" column="11" info="Variable &apos;prev_end&apos; can be declared as pointer to const"/>
+            <symbol>prev_end</symbol>
+        </error>
+        <error id="checkersReport" severity="information" msg="Active checkers: 161/592 (use --checkers-report=&lt;filename&gt; to see details)" verbose="Active checkers: 161/592 (use --checkers-report=&lt;filename&gt; to see details)"/>
+    </errors>
+</results>

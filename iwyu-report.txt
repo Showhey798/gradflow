@@ -1,0 +1,27 @@
+[1/3] Building CXX object src/CMakeFiles/gradflow_impl.dir/autograd/device.cpp.o
+FAILED: [code=1] src/CMakeFiles/gradflow_impl.dir/autograd/device.cpp.o
+/usr/local/bin/cmake -E __run_co_compile --iwyu="iwyu;-Xiwyu;--error_always;--driver-mode=g++" -- /usr/bin/clang++-15  -I/home/runner/work/gradflow/gradflow/include -isystem /home/runner/.conan2/p/eigen3d88c0279cc26/p/include/eigen3 -m64 -g -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wcast-qual -Wformat=2 -Wundef -Werror=float-equal -MD -MT src/CMakeFiles/gradflow_impl.dir/autograd/device.cpp.o -MF src/CMakeFiles/gradflow_impl.dir/autograd/device.cpp.o.d -o src/CMakeFiles/gradflow_impl.dir/autograd/device.cpp.o -c /home/runner/work/gradflow/gradflow/src/autograd/device.cpp
+[2/3] Building CXX object src/CMakeFiles/gradflow_impl.dir/autograd/memory_pool.cpp.o
+FAILED: [code=1] src/CMakeFiles/gradflow_impl.dir/autograd/memory_pool.cpp.o
+/usr/local/bin/cmake -E __run_co_compile --iwyu="iwyu;-Xiwyu;--error_always;--driver-mode=g++" -- /usr/bin/clang++-15  -I/home/runner/work/gradflow/gradflow/include -isystem /home/runner/.conan2/p/eigen3d88c0279cc26/p/include/eigen3 -m64 -g -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wcast-qual -Wformat=2 -Wundef -Werror=float-equal -MD -MT src/CMakeFiles/gradflow_impl.dir/autograd/memory_pool.cpp.o -MF src/CMakeFiles/gradflow_impl.dir/autograd/memory_pool.cpp.o.d -o src/CMakeFiles/gradflow_impl.dir/autograd/memory_pool.cpp.o -c /home/runner/work/gradflow/gradflow/src/autograd/memory_pool.cpp
+Warning: include-what-you-use reported diagnostics:
+
+/home/runner/work/gradflow/gradflow/include/gradflow/autograd/memory_pool.hpp should add these lines:
+#include <utility>        // for pair
+
+/home/runner/work/gradflow/gradflow/include/gradflow/autograd/memory_pool.hpp should remove these lines:
+
+The full include-list for /home/runner/work/gradflow/gradflow/include/gradflow/autograd/memory_pool.hpp:
+#include <cstddef>        // for size_t
+#include <map>            // for map, multimap
+#include <memory>         // for shared_ptr
+#include <mutex>          // for mutex
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for pair
+#include <vector>         // for vector
+namespace gradflow { class DeviceAllocator; }  // lines 13-13
+---
+
+(/home/runner/work/gradflow/gradflow/src/autograd/memory_pool.cpp has correct #includes/fwd-decls)
+
+ninja: build stopped: subcommand failed.
