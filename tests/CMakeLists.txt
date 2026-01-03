@@ -79,6 +79,11 @@ fullscratch_add_test(ops_test SOURCES test_ops.cpp)
 # Device tests
 fullscratch_add_test(device_test SOURCES test_device.cpp)
 
+# Phase 3: Metal GPU tests (macOS only)
+if(APPLE AND GRADFLOW_ENABLE_METAL)
+  fullscratch_add_test(metal_device_test SOURCES test_metal_device.cpp)
+endif()
+
 # Operation tests
 fullscratch_add_test(operation_test SOURCES test_operation.cpp)
 
@@ -135,22 +140,30 @@ fullscratch_add_test(phase2_integration_test SOURCES
 # ========================================
 
 # Add custom target to run all tests with verbose output
+set(ALL_TESTS
+    shape_test
+    storage_test
+    tensor_test
+    optimizer_test
+    ops_test
+    device_test
+    operation_test
+    variable_test
+    ops_grad_test
+    activation_ops_test
+    loss_grad_test
+    phase1_integration_test
+    phase2_integration_test)
+
+# Add Metal tests if enabled
+if(APPLE AND GRADFLOW_ENABLE_METAL)
+  list(APPEND ALL_TESTS metal_device_test)
+endif()
+
 add_custom_target(
   check
   COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --verbose
-  DEPENDS shape_test
-          storage_test
-          tensor_test
-          optimizer_test
-          ops_test
-          device_test
-          operation_test
-          variable_test
-          ops_grad_test
-          activation_ops_test
-          loss_grad_test
-          phase1_integration_test
-          phase2_integration_test
+  DEPENDS ${ALL_TESTS}
           # matrix_test vector_test activation_test loss_test
           # neural_network_test data_loader_test
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
