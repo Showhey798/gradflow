@@ -32,6 +32,7 @@ public:
     id<MTLComputePipelineState> mul_pipeline;
     id<MTLComputePipelineState> sub_pipeline;
     id<MTLComputePipelineState> div_pipeline;
+    id<MTLComputePipelineState> relu_pipeline;
     id<MTLComputePipelineState> sum_stage1_pipeline;
     id<MTLComputePipelineState> sum_stage2_pipeline;
     id<MTLComputePipelineState> mean_pipeline;
@@ -98,6 +99,7 @@ public:
         mul_pipeline = createPipeline("mul_kernel");
         sub_pipeline = createPipeline("sub_kernel");
         div_pipeline = createPipeline("div_kernel");
+        relu_pipeline = createPipeline("relu_kernel");
         sum_stage1_pipeline = createPipeline("sum_kernel_stage1");
         sum_stage2_pipeline = createPipeline("sum_kernel_stage2");
         mean_pipeline = createPipeline("mean_kernel");
@@ -107,6 +109,7 @@ public:
         [mean_pipeline release];
         [sum_stage2_pipeline release];
         [sum_stage1_pipeline release];
+        [relu_pipeline release];
         [div_pipeline release];
         [sub_pipeline release];
         [mul_pipeline release];
@@ -292,6 +295,45 @@ void MetalKernels::div(const float* a, const float* b, float* c, size_t size) {
                                   buffer_b,
                                   buffer_c,
                                   static_cast<uint32_t>(size));
+
+        // No manual release: @autoreleasepool handles it automatically
+    }
+}
+
+void MetalKernels::relu(const float* x, float* y, size_t size) {
+    @autoreleasepool {
+        id<MTLDevice> device = impl_->device;
+        id<MTLCommandQueue> queue = impl_->command_queue;
+
+        id<MTLBuffer> buffer_x = [device newBufferWithBytesNoCopy:(void*)x
+                                                           length:size * sizeof(float)
+                                                          options:MTLResourceStorageModeShared
+                                                      deallocator:nil];
+        id<MTLBuffer> buffer_y = [device newBufferWithBytesNoCopy:y
+                                                           length:size * sizeof(float)
+                                                          options:MTLResourceStorageModeShared
+                                                      deallocator:nil];
+
+        id<MTLCommandBuffer> commandBuffer = [queue commandBuffer];
+        id<MTLComputeCommandEncoder> encoder = [commandBuffer computeCommandEncoder];
+
+        [encoder setComputePipelineState:impl_->relu_pipeline];
+        [encoder setBuffer:buffer_x offset:0 atIndex:0];
+        [encoder setBuffer:buffer_y offset:0 atIndex:1];
+        uint32_t size_u32 = static_cast<uint32_t>(size);
+        [encoder setBytes:&size_u32 length:sizeof(uint32_t) atIndex:2];
+
+        // Thread group size: 256
+        NSUInteger threadGroupSize = 256;
+        NSUInteger numThreadGroups = (size + threadGroupSize - 1) / threadGroupSize;
+
+        MTLSize threadsPerGroup = MTLSizeMake(threadGroupSize, 1, 1);
+        MTLSize numGroups = MTLSizeMake(numThreadGroups, 1, 1);
+
+        [encoder dispatchThreadgroups:numGroups threadsPerThreadgroup:threadsPerGroup];
+        [encoder endEncoding];
+        [commandBuffer commit];
+        [commandBuffer waitUntilCompleted];
 
         // No manual release: @autoreleasepool handles it automatically
     }

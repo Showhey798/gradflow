@@ -175,6 +175,27 @@ class Tensor {
   }
 
   /**
+   * @brief Checks if the tensor is on a GPU device (CUDA or Metal)
+   * @return True if tensor is on GPU
+   */
+  [[nodiscard]] bool isOnGPU() const {
+    Device dev = device();
+    return dev.isCuda() || dev.isMetal();
+  }
+
+  /**
+   * @brief Checks if the tensor is on a Metal GPU
+   * @return True if tensor is on Metal GPU
+   */
+  [[nodiscard]] bool isOnMetal() const { return device().isMetal(); }
+
+  /**
+   * @brief Checks if the tensor is on a CPU
+   * @return True if tensor is on CPU
+   */
+  [[nodiscard]] bool isOnCPU() const { return device().isCpu(); }
+
+  /**
    * @brief Access element at multidimensional index
    *
    * @param indices Vector of indices

@@ -83,6 +83,7 @@ fullscratch_add_test(device_test SOURCES test_device.cpp)
 if(APPLE AND GRADFLOW_ENABLE_METAL)
   fullscratch_add_test(metal_device_test SOURCES test_metal_device.cpp)
   fullscratch_add_test(metal_kernels_test SOURCES test_metal_kernels.cpp)
+  fullscratch_add_test(metal_ops_grad_test SOURCES test_metal_ops_grad.cpp)
 endif()
 
 # Memory Pool tests
@@ -162,7 +163,8 @@ set(ALL_TESTS
 
 # Add Metal tests if enabled
 if(APPLE AND GRADFLOW_ENABLE_METAL)
-  list(APPEND ALL_TESTS metal_device_test metal_kernels_test)
+  list(APPEND ALL_TESTS metal_device_test metal_kernels_test
+       metal_ops_grad_test)
 endif()
 
 add_custom_target(
