@@ -82,6 +82,7 @@ fullscratch_add_test(device_test SOURCES test_device.cpp)
 # Phase 3: Metal GPU tests (macOS only)
 if(APPLE AND GRADFLOW_ENABLE_METAL)
   fullscratch_add_test(metal_device_test SOURCES test_metal_device.cpp)
+  fullscratch_add_test(metal_kernels_test SOURCES test_metal_kernels.cpp)
 endif()
 
 # Operation tests
@@ -157,7 +158,7 @@ set(ALL_TESTS
 
 # Add Metal tests if enabled
 if(APPLE AND GRADFLOW_ENABLE_METAL)
-  list(APPEND ALL_TESTS metal_device_test)
+  list(APPEND ALL_TESTS metal_device_test metal_kernels_test)
 endif()
 
 add_custom_target(
