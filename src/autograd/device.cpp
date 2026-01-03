@@ -2,6 +2,11 @@
 
 #include "gradflow/autograd/allocator.hpp"
 
+#if defined(__APPLE__) && defined(GRADFLOW_HAS_METAL)
+#include "gradflow/autograd/metal/allocator.hpp"
+#include "gradflow/autograd/metal/device.hpp"
+#endif
+
 #include <map>
 #include <memory>
 #include <mutex>
@@ -31,9 +36,11 @@ bool DeviceManager::isDeviceAvailable(DeviceType type, int index) {
             return false;
 
         case DeviceType::METAL:
-            // TODO: Implement Metal availability check
-            // For now, return false as Metal is not yet implemented
+#if defined(__APPLE__) && defined(GRADFLOW_HAS_METAL)
+            return index == 0 && gpu::MetalDevice::isAvailable();
+#else
             return false;
+#endif
 
         default:
             return false;
@@ -51,8 +58,11 @@ int DeviceManager::getDeviceCount(DeviceType type) {
             return 0;
 
         case DeviceType::METAL:
-            // TODO: Query Metal device count
+#if defined(__APPLE__) && defined(GRADFLOW_HAS_METAL)
+            return gpu::MetalDevice::getDeviceCount();
+#else
             return 0;
+#endif
 
         default:
             return 0;
@@ -88,8 +98,15 @@ std::shared_ptr<DeviceAllocator> DeviceManager::getAllocator(const Device& devic
             throw std::runtime_error("CUDA allocator not yet implemented");
 
         case DeviceType::METAL:
-            // TODO: Create Metal allocator when implemented
-            throw std::runtime_error("Metal allocator not yet implemented");
+#if defined(__APPLE__) && defined(GRADFLOW_HAS_METAL)
+            allocator = gpu::getDefaultMetalAllocator();
+            if (!allocator) {
+                throw std::runtime_error("Metal device not available");
+            }
+#else
+            throw std::runtime_error("Metal support not enabled or not available on this platform");
+#endif
+            break;
 
         default:
             throw std::runtime_error("Unknown device type");
