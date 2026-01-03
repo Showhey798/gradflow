@@ -125,9 +125,12 @@ void CPUKernels::matmul(const float* a, const float* b, float* c, size_t m,
 #ifdef _OPENMP
 // OpenMP 並列化: ブロックごとに並列実行
 #pragma omp parallel for collapse(2) schedule(static)
-  for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(m); i += kBlockSize) {
-    for (ptrdiff_t j = 0; j < static_cast<ptrdiff_t>(n); j += kBlockSize) {
-      for (ptrdiff_t p = 0; p < static_cast<ptrdiff_t>(k); p += kBlockSize) {
+  for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(m);
+       i += static_cast<ptrdiff_t>(kBlockSize)) {
+    for (ptrdiff_t j = 0; j < static_cast<ptrdiff_t>(n);
+         j += static_cast<ptrdiff_t>(kBlockSize)) {
+      for (ptrdiff_t p = 0; p < static_cast<ptrdiff_t>(k);
+           p += static_cast<ptrdiff_t>(kBlockSize)) {
         size_t block_m = std::min(kBlockSize, m - static_cast<size_t>(i));
         size_t block_k = std::min(kBlockSize, k - static_cast<size_t>(p));
         size_t block_n = std::min(kBlockSize, n - static_cast<size_t>(j));
