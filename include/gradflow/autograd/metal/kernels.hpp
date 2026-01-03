@@ -120,12 +120,38 @@ class MetalKernels {
    *
    * Metal Performance Shaders の MPSMatrixMultiplication を使用します。
    *
-   * @param a 入力行列 A (GPU メモリ, row-major)
-   * @param b 入力行列 B (GPU メモリ, row-major)
-   * @param c 出力行列 C (GPU メモリ, row-major)
+   * **メモリレイアウト**:
+   * - 入力行列は row-major format で格納されている必要があります
+   * - A[i][j] は a[i * k + j] としてアクセスされます
+   * - B[i][j] は b[i * n + j] としてアクセスされます
+   * - C[i][j] は c[i * n + j] としてアクセスされます
+   * - MPSMatrixDescriptor の rowBytes は行の stride (バイト単位) を表します
+   *
+   * **例**:
+   * ```cpp
+   * // A (2x3): [[1, 2, 3],
+   * //           [4, 5, 6]]
+   * float a[] = {1, 2, 3, 4, 5, 6};
+   *
+   * // B (3x2): [[1, 2],
+   * //           [3, 4],
+   * //           [5, 6]]
+   * float b[] = {1, 2, 3, 4, 5, 6};
+   *
+   * matmul(a, b, c, 2, 3, 2);
+   * // c (2x2): [[22, 28],
+   * //           [49, 64]]
+   * ```
+   *
+   * @param a 入力行列 A (GPU メモリ, row-major, size = m * k)
+   * @param b 入力行列 B (GPU メモリ, row-major, size = k * n)
+   * @param c 出力行列 C (GPU メモリ, row-major, size = m * n)
    * @param m 行列 A の行数
    * @param k 行列 A の列数 / 行列 B の行数
    * @param n 行列 B の列数
+   *
+   * @note MPSMatrixDescriptor は内部的に column-major を使用しますが、
+   *       rowBytes の設定により row-major データを正しく解釈します
    */
   void matmul(const float* a, const float* b, float* c, size_t m, size_t k,
               size_t n);

@@ -405,6 +405,8 @@ TEST_F(MetalKernelsTest, SumKernel_NonMultipleSize) {
 
 TEST_F(MetalKernelsTest, PerformanceComparison_Add) {
   constexpr size_t size = 10000000;  // 10M elements
+  constexpr int warmup_iterations = 5;
+  constexpr int bench_iterations = 10;
 
   // GPU
   float* a_gpu =
@@ -419,12 +421,22 @@ TEST_F(MetalKernelsTest, PerformanceComparison_Add) {
     b_gpu[i] = static_cast<float>(i) * 2.0f;
   }
 
+  // GPU warmup
+  for (int i = 0; i < warmup_iterations; ++i) {
+    kernels_->add(a_gpu, b_gpu, c_gpu, size);
+    kernels_->synchronize();
+  }
+
+  // GPU benchmark
   auto start_gpu = std::chrono::high_resolution_clock::now();
-  kernels_->add(a_gpu, b_gpu, c_gpu, size);
+  for (int i = 0; i < bench_iterations; ++i) {
+    kernels_->add(a_gpu, b_gpu, c_gpu, size);
+  }
   kernels_->synchronize();
   auto end_gpu = std::chrono::high_resolution_clock::now();
 
-  std::chrono::duration<double, std::milli> gpu_time = end_gpu - start_gpu;
+  std::chrono::duration<double, std::milli> gpu_time =
+      (end_gpu - start_gpu) / bench_iterations;
 
   // CPU
   std::vector<float> a_cpu(size), b_cpu(size), c_cpu(size);
@@ -434,18 +446,23 @@ TEST_F(MetalKernelsTest, PerformanceComparison_Add) {
   }
 
   auto start_cpu = std::chrono::high_resolution_clock::now();
-  for (size_t i = 0; i < size; ++i) {
-    c_cpu[i] = a_cpu[i] + b_cpu[i];
+  for (int iter = 0; iter < bench_iterations; ++iter) {
+    for (size_t i = 0; i < size; ++i) {
+      c_cpu[i] = a_cpu[i] + b_cpu[i];
+    }
   }
   auto end_cpu = std::chrono::high_resolution_clock::now();
 
-  std::chrono::duration<double, std::milli> cpu_time = end_cpu - start_cpu;
+  std::chrono::duration<double, std::milli> cpu_time =
+      (end_cpu - start_cpu) / bench_iterations;
 
-  std::cout << "Add (" << size << " elements):" << std::endl;
+  double speedup = cpu_time.count() / gpu_time.count();
+
+  std::cout << "Add (" << size << " elements, averaged over "
+            << bench_iterations << " iterations):" << std::endl;
   std::cout << "  GPU: " << gpu_time.count() << " ms" << std::endl;
   std::cout << "  CPU: " << cpu_time.count() << " ms" << std::endl;
-  std::cout << "  Speedup: " << cpu_time.count() / gpu_time.count() << "x"
-            << std::endl;
+  std::cout << "  Speedup: " << speedup << "x" << std::endl;
 
   // GPU should be faster for large arrays
   EXPECT_LT(gpu_time.count(), cpu_time.count());
