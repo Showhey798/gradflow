@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 
+#include "gradflow/autograd/allocator.hpp"
 #include "gradflow/autograd/memory_pool.hpp"
 
 #ifdef __APPLE__

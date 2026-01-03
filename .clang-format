@@ -107,6 +107,9 @@ IncludeCategories:
 # コメント
 ReflowComments: true
 SpacesBeforeTrailingComments: 2
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 0
 
 # 空白設定
 SpaceBeforeParens: ControlStatements
