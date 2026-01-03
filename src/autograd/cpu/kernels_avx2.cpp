@@ -11,7 +11,11 @@
 #endif
 
 #include <cstdlib>
-#include <cstring>
+#include <string>
+
+#ifndef _MSC_VER
+#include <mm_malloc.h>
+#endif
 
 namespace gradflow {
 namespace cpu {
@@ -28,9 +32,11 @@ static bool has_avx2() {
   if (__get_cpuid(7, &eax, &ebx, &ecx, &edx)) {
     return (ebx & (1 << 5)) != 0;  // AVX2 bit
   }
+  return false;  // __get_cpuid failed
 #endif
+#else
+  return false;  // Not x86_64 architecture
 #endif
-  return false;
 }
 
 static bool has_avx512() {
@@ -44,9 +50,11 @@ static bool has_avx512() {
   if (__get_cpuid(7, &eax, &ebx, &ecx, &edx)) {
     return (ebx & (1 << 16)) != 0;  // AVX-512F bit
   }
+  return false;  // __get_cpuid failed
 #endif
+#else
+  return false;  // Not x86_64 architecture
 #endif
-  return false;
 }
 
 CPUKernels::CPUKernels() : has_avx2_(has_avx2()), has_avx512_(has_avx512()) {}

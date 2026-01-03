@@ -125,7 +125,9 @@ void CPUKernels::matmul(const float* a, const float* b, float* c, size_t m,
 
 #ifdef _OPENMP
 // OpenMP 並列化: ブロックごとに並列実行
-#pragma omp parallel for collapse(2) schedule(static)
+// Note: MSVC の OpenMP 2.0 は collapse
+// 句をサポートしないため、最も外側のループのみ並列化
+#pragma omp parallel for schedule(static)
   for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(m); i += kBlockSize) {
     for (ptrdiff_t j = 0; j < static_cast<ptrdiff_t>(n); j += kBlockSize) {
       for (ptrdiff_t p = 0; p < static_cast<ptrdiff_t>(k); p += kBlockSize) {
