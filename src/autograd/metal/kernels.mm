@@ -187,6 +187,8 @@ void MetalKernels::add(const float* a, const float* b, float* c, size_t size) {
 
         // Wrap existing memory as MTLBuffer (Unified Memory)
         // Using newBufferWithBytesNoCopy to avoid copying
+        // Note: deallocator:nil means the buffer does not own the memory,
+        // so we rely on @autoreleasepool for automatic release
         id<MTLBuffer> buffer_a = [device newBufferWithBytesNoCopy:(void*)a
                                                            length:size * sizeof(float)
                                                           options:MTLResourceStorageModeShared
@@ -207,9 +209,7 @@ void MetalKernels::add(const float* a, const float* b, float* c, size_t size) {
                                   buffer_c,
                                   static_cast<uint32_t>(size));
 
-        [buffer_c release];
-        [buffer_b release];
-        [buffer_a release];
+        // No manual release: @autoreleasepool handles it automatically
     }
 }
 
@@ -237,9 +237,7 @@ void MetalKernels::mul(const float* a, const float* b, float* c, size_t size) {
                                   buffer_c,
                                   static_cast<uint32_t>(size));
 
-        [buffer_c release];
-        [buffer_b release];
-        [buffer_a release];
+        // No manual release: @autoreleasepool handles it automatically
     }
 }
 
@@ -267,9 +265,7 @@ void MetalKernels::sub(const float* a, const float* b, float* c, size_t size) {
                                   buffer_c,
                                   static_cast<uint32_t>(size));
 
-        [buffer_c release];
-        [buffer_b release];
-        [buffer_a release];
+        // No manual release: @autoreleasepool handles it automatically
     }
 }
 
@@ -297,9 +293,7 @@ void MetalKernels::div(const float* a, const float* b, float* c, size_t size) {
                                   buffer_c,
                                   static_cast<uint32_t>(size));
 
-        [buffer_c release];
-        [buffer_b release];
-        [buffer_a release];
+        // No manual release: @autoreleasepool handles it automatically
     }
 }
 
@@ -361,10 +355,8 @@ void MetalKernels::sum(const float* input, float* output, size_t size) {
         [commandBuffer commit];
         [commandBuffer waitUntilCompleted];
 
-        // Cleanup
-        [output_buffer release];
-        [partial_buffer release];
-        [input_buffer release];
+        // No manual release for buffers created with deallocator:nil
+        // partial_buffer is released automatically by ARC
     }
 }
 
@@ -406,9 +398,8 @@ void MetalKernels::mean(const float* input, float* output, size_t size) {
         [commandBuffer commit];
         [commandBuffer waitUntilCompleted];
 
-        [output_buffer release];
-        [sum_buffer release];
-        [temp_sum_buffer release];
+        // No manual release for buffers created with deallocator:nil
+        // temp_sum_buffer is released automatically by ARC
     }
 }
 
@@ -472,14 +463,12 @@ void MetalKernels::matmul(const float* a, const float* b, float* c, size_t m, si
         [commandBuffer commit];
         [commandBuffer waitUntilCompleted];
 
-        // Cleanup
+        // Only release MPS objects (matrices and matmul)
+        // Buffers created with deallocator:nil are released automatically by @autoreleasepool
         [matmul release];
         [matrix_c release];
         [matrix_b release];
         [matrix_a release];
-        [buffer_c release];
-        [buffer_b release];
-        [buffer_a release];
     }
 }
 
