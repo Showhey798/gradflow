@@ -107,6 +107,10 @@ IncludeCategories:
 # コメント
 ReflowComments: true
 SpacesBeforeTrailingComments: 2
+# Note: AlignTrailingComments with Kind/OverEmptyLines requires clang-format >= 16
+# Using simple boolean for compatibility with clang-format-15
+# Temporarily disabled to avoid version differences
+AlignTrailingComments: false
 
 # 空白設定
 SpaceBeforeParens: ControlStatements

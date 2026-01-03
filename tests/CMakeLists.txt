@@ -85,6 +85,9 @@ if(APPLE AND GRADFLOW_ENABLE_METAL)
   fullscratch_add_test(metal_kernels_test SOURCES test_metal_kernels.cpp)
 endif()
 
+# Memory Pool tests
+fullscratch_add_test(memory_pool_test SOURCES test_memory_pool.cpp)
+
 # Operation tests
 fullscratch_add_test(operation_test SOURCES test_operation.cpp)
 
@@ -148,6 +151,7 @@ set(ALL_TESTS
     optimizer_test
     ops_test
     device_test
+    memory_pool_test
     operation_test
     variable_test
     ops_grad_test

@@ -1,5 +1,5 @@
 # Source files for the compiled part of the library
-set(GRADFLOW_SOURCES autograd/device.cpp)
+set(GRADFLOW_SOURCES autograd/device.cpp autograd/memory_pool.cpp)
 
 # Metal サポート (macOS のみ)
 if(APPLE AND GRADFLOW_ENABLE_METAL)
