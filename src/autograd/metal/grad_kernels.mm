@@ -177,6 +177,13 @@ void MetalGradKernels::mul_grad(const float* grad_output,
                                                                options:MTLResourceStorageModeShared
                                                            deallocator:nil];
 
+        // Check for allocation failures
+        if (!buffer_grad_output || !buffer_x || !buffer_y || !buffer_grad_x || !buffer_grad_y) {
+            throw std::runtime_error(
+                "Failed to allocate Metal buffers for mul_grad. "
+                "GPU memory may be insufficient.");
+        }
+
         id<MTLCommandBuffer> command_buffer = [queue commandBuffer];
         id<MTLComputeCommandEncoder> compute_encoder = [command_buffer computeCommandEncoder];
 
@@ -236,6 +243,13 @@ void MetalGradKernels::relu_grad(const float* grad_output,
                                                                 length:size * sizeof(float)
                                                                options:MTLResourceStorageModeShared
                                                            deallocator:nil];
+
+        // Check for allocation failures
+        if (!buffer_grad_output || !buffer_x || !buffer_grad_x) {
+            throw std::runtime_error(
+                "Failed to allocate Metal buffers for relu_grad. "
+                "GPU memory may be insufficient.");
+        }
 
         id<MTLCommandBuffer> command_buffer = [queue commandBuffer];
         id<MTLComputeCommandEncoder> compute_encoder = [command_buffer computeCommandEncoder];
