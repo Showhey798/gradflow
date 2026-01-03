@@ -82,6 +82,9 @@ kernel void relu_grad_kernel(device const float* grad_output [[buffer(0)]],
                              uint gid [[thread_position_in_grid]]) {
   if (gid < size) {
     // x > 0 の場合は勾配を通し、x <= 0 の場合は勾配を 0 にする
+    // 注: x == 0.0 の場合は勾配を 0 とする（PyTorch の挙動に準拠）
+    // 数値安定性: 厳密な 0.0 比較を使用（epsilon は導入していない）
+    // 理由: 浮動小数点の丸め誤差は ReLU の判定に実質的な影響を与えない
     float mask = (x[gid] > 0.0F) ? 1.0F : 0.0F;
     grad_x[gid] = grad_output[gid] * mask;
   }

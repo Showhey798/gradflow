@@ -139,8 +139,17 @@ void MetalGradKernels::add_grad(const float* grad_output,
                                 float* grad_x,
                                 float* grad_y,
                                 size_t size) {
-    // Add の勾配は恒等写像なので、メモリコピーで実装
-    // Unified Memory なので CPU からも直接アクセス可能
+    // Add の勾配は恒等写像なので、CPU の memcpy で実装
+    //
+    // 実装方針:
+    // - Unified Memory 環境では CPU からの memcpy は高速に動作する
+    // - GPU カーネルの起動オーバーヘッドが演算時間を上回る可能性が高い
+    // - 単純なメモリコピーであり、GPU 並列化のメリットが小さい
+    //
+    // 将来の最適化オプション:
+    // - 大規模テンソル (> 1MB) で CPU memcpy がボトルネックになる場合、
+    //   MTLBlitCommandEncoder を使用した GPU コピーへの置き換えを検討
+    // - ベンチマーク結果に基づいて実装を選択する
     std::memcpy(grad_x, grad_output, size * sizeof(float));
     std::memcpy(grad_y, grad_output, size * sizeof(float));
 }
@@ -151,6 +160,11 @@ void MetalGradKernels::mul_grad(const float* grad_output,
                                 float* grad_x,
                                 float* grad_y,
                                 size_t size) {
+    // 空テンソル (size = 0) の場合は何もしない
+    if (size == 0) {
+        return;
+    }
+
     @autoreleasepool {
         id<MTLDevice> device = impl_->device;
         id<MTLCommandQueue> queue = impl_->command_queue;
@@ -188,6 +202,12 @@ void MetalGradKernels::mul_grad(const float* grad_output,
         id<MTLComputeCommandEncoder> compute_encoder = [command_buffer computeCommandEncoder];
 
         // Thread group size
+        // 注: 256 はバランスの取れた値として選択
+        // - Apple Silicon の推奨範囲: 256-1024
+        // - 小さすぎると GPU の並列度を活用できない
+        // - 大きすぎると小規模テンソルで無駄なスレッドが発生
+        // - 現在の実装では 256 で十分な性能が得られているため、
+        //   パフォーマンス問題が確認されるまで変更しない
         NSUInteger thread_group_size = impl_->mul_grad_x_pipeline.maxTotalThreadsPerThreadgroup;
         if (thread_group_size > 256) {
             thread_group_size = 256;
@@ -226,6 +246,11 @@ void MetalGradKernels::relu_grad(const float* grad_output,
                                  const float* x,
                                  float* grad_x,
                                  size_t size) {
+    // 空テンソル (size = 0) の場合は何もしない
+    if (size == 0) {
+        return;
+    }
+
     @autoreleasepool {
         id<MTLDevice> device = impl_->device;
         id<MTLCommandQueue> queue = impl_->command_queue;
@@ -255,6 +280,7 @@ void MetalGradKernels::relu_grad(const float* grad_output,
         id<MTLComputeCommandEncoder> compute_encoder = [command_buffer computeCommandEncoder];
 
         // Thread group size
+        // 注: 256 はバランスの取れた値として選択（詳細は mul_grad を参照）
         NSUInteger thread_group_size = impl_->relu_grad_pipeline.maxTotalThreadsPerThreadgroup;
         if (thread_group_size > 256) {
             thread_group_size = 256;

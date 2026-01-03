@@ -233,6 +233,115 @@ TEST_F(MetalOpsGradTest, MatMulGradient) {
 }
 
 // ===================================================================
+// Edge Case Tests
+// ===================================================================
+
+TEST_F(MetalOpsGradTest, MulGradientEmptyTensor) {
+  const size_t kSize = 0;
+
+  // 空テンソルを作成
+  Tensor<float> x(Shape({kSize}), allocator);
+  Tensor<float> y(Shape({kSize}), allocator);
+  Tensor<float> grad_output(Shape({kSize}), allocator);
+  Tensor<float> grad_x(Shape({kSize}), allocator);
+  Tensor<float> grad_y(Shape({kSize}), allocator);
+
+  // 空テンソルに対する勾配計算がクラッシュしないことを確認
+  EXPECT_NO_THROW(grad_kernels->mul_grad(grad_output.data(), x.data(), y.data(),
+                                         grad_x.data(), grad_y.data(), kSize));
+}
+
+TEST_F(MetalOpsGradTest, ReLUGradientAtZero) {
+  const size_t kSize = 5;
+
+  // x = 0.0 を含むテンソルを作成
+  Tensor<float> x(Shape({kSize}), allocator);
+  Tensor<float> grad_output(Shape({kSize}), allocator);
+
+  // データを初期化 (境界値 0.0 を含む)
+  x.data()[0] = -1.0F;
+  x.data()[1] = -0.001F;
+  x.data()[2] = 0.0F;  // 境界値
+  x.data()[3] = 0.001F;
+  x.data()[4] = 1.0F;
+
+  for (size_t i = 0; i < kSize; ++i) {
+    grad_output.data()[i] = 1.0F;
+  }
+
+  // Backward pass
+  Tensor<float> grad_x(Shape({kSize}), allocator);
+  grad_kernels->relu_grad(grad_output.data(), x.data(), grad_x.data(), kSize);
+
+  // 結果を検証 (x == 0.0 の場合は勾配が 0.0 であることを確認)
+  EXPECT_FLOAT_EQ(grad_x.data()[0], 0.0F) << "x = -1.0 should have gradient 0";
+  EXPECT_FLOAT_EQ(grad_x.data()[1], 0.0F)
+      << "x = -0.001 should have gradient 0";
+  EXPECT_FLOAT_EQ(grad_x.data()[2], 0.0F)
+      << "x = 0.0 (boundary) should have gradient 0";
+  EXPECT_FLOAT_EQ(grad_x.data()[3], 1.0F) << "x = 0.001 should have gradient 1";
+  EXPECT_FLOAT_EQ(grad_x.data()[4], 1.0F) << "x = 1.0 should have gradient 1";
+}
+
+TEST_F(MetalOpsGradTest, ReLUGradientWithNaN) {
+  const size_t kSize = 3;
+
+  // NaN/Inf を含むテンソルを作成
+  Tensor<float> x(Shape({kSize}), allocator);
+  Tensor<float> grad_output(Shape({kSize}), allocator);
+
+  // データを初期化
+  x.data()[0] = std::numeric_limits<float>::quiet_NaN();
+  x.data()[1] = std::numeric_limits<float>::infinity();
+  x.data()[2] = -std::numeric_limits<float>::infinity();
+
+  for (size_t i = 0; i < kSize; ++i) {
+    grad_output.data()[i] = 1.0F;
+  }
+
+  // Backward pass
+  Tensor<float> grad_x(Shape({kSize}), allocator);
+  grad_kernels->relu_grad(grad_output.data(), x.data(), grad_x.data(), kSize);
+
+  // NaN は比較で常に false を返すため、勾配は 0.0 になる
+  EXPECT_FLOAT_EQ(grad_x.data()[0], 0.0F) << "NaN should produce gradient 0";
+
+  // +Inf > 0.0 は true なので勾配は 1.0
+  EXPECT_FLOAT_EQ(grad_x.data()[1], 1.0F) << "+Inf should produce gradient 1";
+
+  // -Inf > 0.0 は false なので勾配は 0.0
+  EXPECT_FLOAT_EQ(grad_x.data()[2], 0.0F) << "-Inf should produce gradient 0";
+}
+
+TEST_F(MetalOpsGradTest, MulGradientLargeTensor) {
+  const size_t kSize = 1024 * 1024;  // 1M elements
+
+  // 大規模テンソルを作成
+  Tensor<float> x(Shape({kSize}), allocator);
+  Tensor<float> y(Shape({kSize}), allocator);
+  Tensor<float> grad_output(Shape({kSize}), allocator);
+
+  // データを初期化
+  for (size_t i = 0; i < kSize; ++i) {
+    x.data()[i] = 1.0F;
+    y.data()[i] = 2.0F;
+    grad_output.data()[i] = 1.0F;
+  }
+
+  // Backward pass
+  Tensor<float> grad_x(Shape({kSize}), allocator);
+  Tensor<float> grad_y(Shape({kSize}), allocator);
+  grad_kernels->mul_grad(grad_output.data(), x.data(), y.data(), grad_x.data(),
+                         grad_y.data(), kSize);
+
+  // 結果を検証 (サンプリング)
+  for (size_t i = 0; i < kSize; i += 1024) {
+    EXPECT_NEAR(grad_x.data()[i], 2.0F, 1e-5F) << "Mismatch at index " << i;
+    EXPECT_NEAR(grad_y.data()[i], 1.0F, 1e-5F) << "Mismatch at index " << i;
+  }
+}
+
+// ===================================================================
 // Main
 // ===================================================================
 
