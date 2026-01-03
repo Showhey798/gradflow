@@ -5,8 +5,7 @@
 #include <memory>
 #include <string>
 
-namespace gradflow {
-namespace cpu {
+namespace gradflow::cpu {
 
 /**
  * @brief CPU 最適化カーネルの管理クラス
@@ -114,7 +113,7 @@ class CPUKernels {
    *
    * @return SIMD 命令セット名（例: "AVX2", "AVX512", "Scalar (No SIMD)"）
    */
-  std::string getSIMDInfo() const;
+  [[nodiscard]] std::string getSIMDInfo() const;
 
  private:
   bool has_avx2_;
@@ -137,5 +136,4 @@ void* alignedAlloc(size_t size, size_t alignment = 32);
  */
 void alignedFree(void* ptr);
 
-}  // namespace cpu
-}  // namespace gradflow
+}  // namespace gradflow::cpu
