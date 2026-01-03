@@ -6,6 +6,7 @@
 #endif
 
 #include <algorithm>
+#include <cstddef>  // for ptrdiff_t
 
 namespace gradflow {
 namespace cpu {
@@ -124,15 +125,17 @@ void CPUKernels::matmul(const float* a, const float* b, float* c, size_t m,
 #ifdef _OPENMP
 // OpenMP 並列化: ブロックごとに並列実行
 #pragma omp parallel for collapse(2) schedule(static)
-  for (size_t i = 0; i < m; i += kBlockSize) {
-    for (size_t j = 0; j < n; j += kBlockSize) {
-      for (size_t p = 0; p < k; p += kBlockSize) {
-        size_t block_m = std::min(kBlockSize, m - i);
-        size_t block_k = std::min(kBlockSize, k - p);
-        size_t block_n = std::min(kBlockSize, n - j);
+  for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(m); i += kBlockSize) {
+    for (ptrdiff_t j = 0; j < static_cast<ptrdiff_t>(n); j += kBlockSize) {
+      for (ptrdiff_t p = 0; p < static_cast<ptrdiff_t>(k); p += kBlockSize) {
+        size_t block_m = std::min(kBlockSize, m - static_cast<size_t>(i));
+        size_t block_k = std::min(kBlockSize, k - static_cast<size_t>(p));
+        size_t block_n = std::min(kBlockSize, n - static_cast<size_t>(j));
 
-        matmul_block(a + i * k + p, b + p * n + j, c + i * n + j, block_m,
-                     block_k, block_n, k, n, n);
+        matmul_block(a + static_cast<size_t>(i) * k + static_cast<size_t>(p),
+                     b + static_cast<size_t>(p) * n + static_cast<size_t>(j),
+                     c + static_cast<size_t>(i) * n + static_cast<size_t>(j),
+                     block_m, block_k, block_n, k, n, n);
       }
     }
   }
