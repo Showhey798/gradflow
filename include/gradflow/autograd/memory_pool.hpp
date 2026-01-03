@@ -16,13 +16,13 @@ class DeviceAllocator;
  * @brief メモリプールの統計情報
  */
 struct MemoryPoolStats {
-  size_t total_allocated = 0;       ///< 総割り当てサイズ (bytes)
-  size_t total_freed = 0;           ///< 総解放サイズ (bytes)
-  size_t current_usage = 0;         ///< 現在の使用量 (bytes)
-  size_t peak_usage = 0;            ///< ピーク使用量 (bytes)
-  size_t num_allocations = 0;       ///< 割り当て回数
-  size_t num_deallocations = 0;     ///< 解放回数
-  size_t num_pool_allocations = 0;  ///< プールからの割り当て回数
+  size_t total_allocated = 0;         ///< 総割り当てサイズ (bytes)
+  size_t total_freed = 0;             ///< 総解放サイズ (bytes)
+  size_t current_usage = 0;           ///< 現在の使用量 (bytes)
+  size_t peak_usage = 0;              ///< ピーク使用量 (bytes)
+  size_t num_allocations = 0;         ///< 割り当て回数
+  size_t num_deallocations = 0;       ///< 解放回数
+  size_t num_pool_allocations = 0;    ///< プールからの割り当て回数
   size_t num_device_allocations = 0;  ///< デバイスからの直接割り当て回数
 };
 
@@ -147,8 +147,7 @@ class MemoryPool {
    * @param ptr ブロックの開始アドレス
    * @return イテレータ（見つからない場合は end()）
    */
-  auto findPreviousFreeBlock(void* ptr)
-      -> std::multimap<size_t, void*>::iterator;
+  std::multimap<size_t, void*>::iterator findPreviousFreeBlock(void* ptr);
 
   /**
    * @brief 後方の隣接する空きブロックを検索
@@ -157,8 +156,8 @@ class MemoryPool {
    * @param size ブロックサイズ
    * @return イテレータ（見つからない場合は end()）
    */
-  auto findNextFreeBlock(void* ptr,
-                         size_t size) -> std::multimap<size_t, void*>::iterator;
+  std::multimap<size_t, void*>::iterator findNextFreeBlock(void* ptr,
+                                                           size_t size);
 
   std::shared_ptr<DeviceAllocator> allocator_;  ///< 基底アロケータ
   size_t pool_size_;                            ///< プールサイズ

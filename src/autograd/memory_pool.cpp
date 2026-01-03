@@ -164,8 +164,8 @@ void MemoryPool::allocateNewPool(size_t size) {
   stats_.num_device_allocations++;
 }
 
-auto MemoryPool::findPreviousFreeBlock(void* ptr)
-    -> std::multimap<size_t, void*>::iterator {
+std::multimap<size_t, void*>::iterator MemoryPool::findPreviousFreeBlock(
+    void* ptr) {
   for (auto it = free_blocks_.begin(); it != free_blocks_.end(); ++it) {
     void* block_end =
         static_cast<char*>(it->second) + static_cast<ptrdiff_t>(it->first);
@@ -176,8 +176,8 @@ auto MemoryPool::findPreviousFreeBlock(void* ptr)
   return free_blocks_.end();
 }
 
-auto MemoryPool::findNextFreeBlock(void* ptr, size_t size)
-    -> std::multimap<size_t, void*>::iterator {
+std::multimap<size_t, void*>::iterator MemoryPool::findNextFreeBlock(
+    void* ptr, size_t size) {
   void* block_end = static_cast<char*>(ptr) + static_cast<ptrdiff_t>(size);
   for (auto it = free_blocks_.begin(); it != free_blocks_.end(); ++it) {
     if (it->second == block_end) {
