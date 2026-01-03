@@ -93,6 +93,15 @@ class MetalKernels {
    */
   void div(const float* a, const float* b, float* c, size_t size);
 
+  /**
+   * @brief ReLU (Rectified Linear Unit): y = max(0, x)
+   *
+   * @param x 入力配列 (GPU メモリ)
+   * @param y 出力配列 (GPU メモリ)
+   * @param size 要素数
+   */
+  void relu(const float* x, float* y, size_t size);
+
   // ===== Reduction Operations =====
 
   /**

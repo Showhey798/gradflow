@@ -3,7 +3,7 @@
 ## プロジェクト概要
 自動微分ライブラリ GradFlow の段階的開発
 
-最終更新: 2025-12-31
+最終更新: 2026-01-03
 
 ## Phase 1: 基礎インフラ
 ### ステータス: ✅ 完了
@@ -173,22 +173,74 @@
   - ステータス: Metal GPU のデバイス抽象化とメモリ割り当て実装完了
   - 設計書: `docs/ISSUE_14_metal_device_design.md`
 
-### 進行中
-- 🚧 3.2 Metal Compute Shader の実装 (Week 1-2)
-  - Issue #15: 実装完了（PR #67: レビュー待ち）
-  - ステータス: すべてのテスト pass（10/10）、ユーザーレビュー待ち
+- ✅ 3.2 Metal Compute Shader の実装 (Week 1-2)
+  - Issue #15: 完了（PR #67: マージ済み）
+  - ステータス: すべてのテスト pass（10/10）
   - 実装内容: Elementwise 演算、Reduction 演算、MPS MatMul
   - パフォーマンス: GPU が CPU より 2.8x 高速（10M 要素の add 演算）
   - 設計書: `docs/ISSUE_15_metal_kernels_design.md`
+
+- ✅ 3.3 MemoryPool の実装 (Week 2-3)
+  - Issue #16: 完了（PR #68: マージ済み）
+  - ステータス: 効率的な GPU メモリ管理の MemoryPool 実装完了
+  - 設計書: `docs/ISSUE_16_memory_pool_design.md`
+
+### 進行中
+- 🚧 3.4 Metal での自動微分 (Week 3-4)
+  - Issue #17: 実装完了（PR #69: AI レビュー待ち）
+  - ステータス: 実装完了、AI レビュー待ち
+  - 実装項目: Metal 上での Operation、勾配計算の Metal Shader、CPU と GPU の統一インターフェース
+  - すべてのテスト pass (3/3)
+
+## 現在のタスク: Issue #17 - Metal での自動微分
+
+### タスク詳細
+**目的**: Metal GPU 上で自動微分を実行し、CPU と GPU の統一インターフェースを提供
+
+**実装項目**:
+- Metal 上での Operation の実装
+- 勾配計算の Metal Shader
+- CPU と GPU の統一インターフェース
+
+**ファイル**:
+- `include/gradflow/autograd/metal/grad_kernels.hpp`
+- `src/autograd/metal/grad_kernels.metal`
+- `src/autograd/metal/grad_kernels.mm`
+- `tests/test_metal_ops_grad.cpp`
+- `docs/ISSUE_17_metal_autograd_design.md`
+
+**テスト項目**:
+- ✅ MetalOpsGradTest::MulGradient (627 ms)
+- ✅ MetalOpsGradTest::ReLUGradient (1 ms)
+- ✅ MetalOpsGradTest::MatMulGradient (11 ms)
+
+**完了基準**:
+- ✅ Metal GPU での勾配計算が CPU と一致
+- ✅ 数値勾配チェックがすべてパス
+- ✅ Apple Silicon の GPU を効率的に活用
+
+### ワークフロー進捗
+1. ✅ **[設計]**: ml-lib-architect - 設計図とタスクリスト作成完了
+2. ✅ **[実装]**: github-issue-implementer - PR #69 作成完了
+3. 🔄 **[AI レビュー]**: ml-code-reviewer - レビュー待ち
+4. ⏳ **[自動検証]**: CI チェック - 待機中
+5. ⏳ **[納品]**: ユーザーへ最終レビューとマージ依頼
+
+### 依存関係
+- ✅ Issue #16 (MemoryPool) - 完了（PR #68: マージ済み）
+- ✅ Issue #15 (Metal Compute Shader) - 完了（PR #67: マージ済み）
+- ✅ Issue #14 (Metal Device と Allocator) - 完了（PR #66: マージ済み）
+
+---
 
 ## 次のステップ
 1. ✅ Variable クラスの実装完了（PR #59: ユーザーレビュー待ち）
 2. ✅ 基本演算の Operation 実装完了（PR #60: ユーザーレビュー待ち）
 3. ✅ 活性化関数の実装（PR #61: AI レビュー完了、ユーザーレビュー待ち）
 4. ✅ Metal Device と Allocator（PR #66: マージ済み）
-5. 🚧 **Metal Compute Shader の実装** ← 現在ここ（PR #67: レビュー待ち）
-6. ⏭️ Phase 3.3: MemoryPool の実装
-7. ⏭️ Phase 3.4: Metal での自動微分
+5. ✅ Metal Compute Shader の実装（PR #67: マージ済み）
+6. ✅ MemoryPool の実装（PR #68: マージ済み）
+7. 🚧 **Metal での自動微分** ← 現在ここ（Issue #17）
 
 ## リスクと課題
 現在の課題: なし（すべて順調）

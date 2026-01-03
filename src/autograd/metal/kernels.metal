@@ -109,6 +109,28 @@ kernel void div_kernel(device const float* a [[buffer(0)]],
   }
 }
 
+/**
+ * @brief ReLU (Rectified Linear Unit) カーネル: y = max(0, x)
+ *
+ * Thread Group Size: 256
+ * Grid Size: (size + 255) / 256
+ *
+ * ReLU は最も一般的な活性化関数で、負の値を 0 にクリップします。
+ *
+ * @param x 入力配列 [[buffer(0)]]
+ * @param y 出力配列 [[buffer(1)]]
+ * @param size 要素数 [[buffer(2)]]
+ * @param gid スレッドの global position
+ */
+kernel void relu_kernel(device const float* x [[buffer(0)]],
+                        device float* y [[buffer(1)]],
+                        constant uint& size [[buffer(2)]],
+                        uint gid [[thread_position_in_grid]]) {
+  if (gid < size) {
+    y[gid] = (x[gid] > 0.0F) ? x[gid] : 0.0F;
+  }
+}
+
 // ===================================================================
 // Reduction Operations
 // ===================================================================
