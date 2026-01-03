@@ -187,9 +187,10 @@
 
 ### 進行中
 - 🚧 3.4 Metal での自動微分 (Week 3-4)
-  - Issue #17: 設計フェーズ開始
-  - ステータス: Architect による設計確定中
+  - Issue #17: 実装完了（PR #69: AI レビュー待ち）
+  - ステータス: 実装完了、AI レビュー待ち
   - 実装項目: Metal 上での Operation、勾配計算の Metal Shader、CPU と GPU の統一インターフェース
+  - すべてのテスト pass (3/3)
 
 ## 現在のタスク: Issue #17 - Metal での自動微分
 
@@ -202,23 +203,26 @@
 - CPU と GPU の統一インターフェース
 
 **ファイル**:
-- `src/autograd/metal/ops/*.metal`
-- `src/autograd/metal/ops/*.mm`
+- `include/gradflow/autograd/metal/grad_kernels.hpp`
+- `src/autograd/metal/grad_kernels.metal`
+- `src/autograd/metal/grad_kernels.mm`
 - `tests/test_metal_ops_grad.cpp`
+- `docs/ISSUE_17_metal_autograd_design.md`
 
 **テスト項目**:
-- MetalOpsGradTest::MatMulGradient
-- MetalOpsGradTest::ReLUGradient
+- ✅ MetalOpsGradTest::MulGradient (627 ms)
+- ✅ MetalOpsGradTest::ReLUGradient (1 ms)
+- ✅ MetalOpsGradTest::MatMulGradient (11 ms)
 
 **完了基準**:
-- Metal GPU での勾配計算が CPU と一致
-- 数値勾配チェックがすべてパス
-- Apple Silicon の GPU を効率的に活用
+- ✅ Metal GPU での勾配計算が CPU と一致
+- ✅ 数値勾配チェックがすべてパス
+- ✅ Apple Silicon の GPU を効率的に活用
 
 ### ワークフロー進捗
-1. 🔄 **[設計]**: ml-lib-architect - 設計図とタスクリスト作成中
-2. ⏳ **[実装]**: github-issue-implementer - 待機中
-3. ⏳ **[AI レビュー]**: ml-code-reviewer - 待機中
+1. ✅ **[設計]**: ml-lib-architect - 設計図とタスクリスト作成完了
+2. ✅ **[実装]**: github-issue-implementer - PR #69 作成完了
+3. 🔄 **[AI レビュー]**: ml-code-reviewer - レビュー待ち
 4. ⏳ **[自動検証]**: CI チェック - 待機中
 5. ⏳ **[納品]**: ユーザーへ最終レビューとマージ依頼
 
