@@ -180,7 +180,11 @@ TEST_F(MetalDeviceTest, InvalidDeallocate) {
     int dummy = 0;
     void* invalid_ptr = &dummy;
 
-    EXPECT_THROW(allocator_->deallocate(invalid_ptr), std::runtime_error);
+    // 不正なポインタはサイレントに無視される（std::free と同様の動作）
+    EXPECT_NO_THROW(allocator_->deallocate(invalid_ptr));
+
+    // nullptr も許容される
+    EXPECT_NO_THROW(allocator_->deallocate(nullptr));
 }
 
 // Test 10: 同期

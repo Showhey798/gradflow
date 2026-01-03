@@ -2,7 +2,6 @@
 
 #include "gradflow/autograd/metal/allocator.hpp"
 #include "gradflow/autograd/metal/device.hpp"
-#include "metal_device_impl.hpp"
 
 #include <cstring>
 #include <stdexcept>
@@ -50,8 +49,7 @@ void* MetalAllocator::allocate(size_t size) {
     size_t aligned_size = (size + alignment_ - 1) & ~(alignment_ - 1);
 
     @autoreleasepool {
-        auto* impl = device_->impl();
-        id<MTLDevice> mtl_device = impl->device;
+        id<MTLDevice> mtl_device = (__bridge id<MTLDevice>)device_->getMetalDevice();
 
         // Shared storage mode: CPU と GPU 両方からアクセス可能
         id<MTLBuffer> buffer =
@@ -74,15 +72,17 @@ void* MetalAllocator::allocate(size_t size) {
 
 void MetalAllocator::deallocate(void* ptr) {
     if (!ptr) {
-        return;
+        return;  // nullptr は許容（std::free と同様の動作）
     }
 
     auto it = buffer_map_->find(ptr);
     if (it == buffer_map_->end()) {
-        throw std::runtime_error("Attempting to deallocate unknown pointer");
+        // 不正なポインタの場合は何もしない（サイレントに無視）
+        // Metal buffers は BufferInfo の RAII により自動的に解放されます
+        return;
     }
 
-    buffer_map_->erase(it);
+    buffer_map_->erase(it);  // BufferInfo のデストラクタで [buffer release] が呼ばれる
 }
 
 Device MetalAllocator::device() const {
@@ -102,8 +102,9 @@ void MetalAllocator::copyToCPU(void* dst, const void* src, size_t size) {
 void MetalAllocator::synchronize() {
     // コマンドキューのすべてのコマンドバッファを同期
     @autoreleasepool {
-        auto* impl = device_->impl();
-        id<MTLCommandBuffer> cmd_buffer = [impl->command_queue commandBuffer];
+        id<MTLCommandQueue> command_queue =
+            (__bridge id<MTLCommandQueue>)device_->getMetalCommandQueue();
+        id<MTLCommandBuffer> cmd_buffer = [command_queue commandBuffer];
         [cmd_buffer commit];
         [cmd_buffer waitUntilCompleted];
     }

@@ -81,9 +81,24 @@ public:
 
     /**
      * @brief 内部実装へのアクセス (Allocator 用)
+     * @internal この関数は内部実装でのみ使用されます
      * @return 内部実装ポインタ
      */
     MetalDeviceImpl* impl() const { return impl_.get(); }
+
+    /**
+     * @brief Metal デバイスハンドルを取得 (Allocator 用)
+     * @internal この関数は内部実装でのみ使用されます
+     * @return Metal デバイスハンドル (void* として id<MTLDevice> を返す)
+     */
+    void* getMetalDevice() const;
+
+    /**
+     * @brief Metal コマンドキューハンドルを取得 (Allocator 用)
+     * @internal この関数は内部実装でのみ使用されます
+     * @return Metal コマンドキューハンドル (void* として id<MTLCommandQueue> を返す)
+     */
+    void* getMetalCommandQueue() const;
 
 private:
     MetalDevice();  // Private constructor (factory pattern)

@@ -5,6 +5,10 @@
 Language: Cpp
 BasedOnStyle: Google
 
+---
+Language: ObjC
+BasedOnStyle: Google
+
 # インデント設定
 IndentWidth: 4
 TabWidth: 4
