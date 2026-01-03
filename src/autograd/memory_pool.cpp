@@ -103,13 +103,13 @@ void MemoryPool::deallocate(void* ptr) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   // 割り当て情報を取得
-  auto it = allocated_blocks_.find(ptr);
-  if (it == allocated_blocks_.end()) {
+  auto alloc_it = allocated_blocks_.find(ptr);
+  if (alloc_it == allocated_blocks_.end()) {
     throw std::runtime_error("Invalid pointer: not allocated by this pool");
   }
 
-  BlockInfo info = it->second;
-  allocated_blocks_.erase(it);
+  BlockInfo info = alloc_it->second;
+  allocated_blocks_.erase(alloc_it);
 
   // 統計情報の更新
   stats_.total_freed += info.size;
@@ -126,8 +126,8 @@ void MemoryPool::deallocate(void* ptr) {
     --addr_it;
     void* prev_ptr = addr_it->first;
     size_t prev_size = addr_it->second;
-    void* prev_end =
-        static_cast<char*>(prev_ptr) + static_cast<ptrdiff_t>(prev_size);
+    const void* prev_end =
+        static_cast<const char*>(prev_ptr) + static_cast<ptrdiff_t>(prev_size);
 
     if (prev_end == merged_ptr) {
       // マージ可能
@@ -136,9 +136,9 @@ void MemoryPool::deallocate(void* ptr) {
 
       // 両方のインデックスから削除
       auto range = free_blocks_.equal_range(prev_size);
-      for (auto it = range.first; it != range.second; ++it) {
-        if (it->second == prev_ptr) {
-          free_blocks_.erase(it);
+      for (auto block_it = range.first; block_it != range.second; ++block_it) {
+        if (block_it->second == prev_ptr) {
+          free_blocks_.erase(block_it);
           break;
         }
       }
@@ -156,9 +156,9 @@ void MemoryPool::deallocate(void* ptr) {
 
     // 両方のインデックスから削除
     auto range = free_blocks_.equal_range(next_size);
-    for (auto it = range.first; it != range.second; ++it) {
-      if (it->second == next_ptr) {
-        free_blocks_.erase(it);
+    for (auto block_it = range.first; block_it != range.second; ++block_it) {
+      if (block_it->second == next_ptr) {
+        free_blocks_.erase(block_it);
         break;
       }
     }
