@@ -15,15 +15,16 @@ using namespace gradflow;
 class MemoryPoolTest : public ::testing::Test {
  protected:
   void SetUp() override {
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(GRADFLOW_HAS_METAL)
     allocator_ = gpu::getDefaultMetalAllocator();
-    if (allocator_) {
-      pool_ = std::make_unique<MemoryPool>(allocator_, 1024 * 1024);  // 1 MB
+    if (!allocator_) {
+      // Metal が利用不可の場合は CPU allocator を使用
+      allocator_ = getDefaultCpuAllocator();
     }
 #else
     allocator_ = getDefaultCpuAllocator();
-    pool_ = std::make_unique<MemoryPool>(allocator_, 1024 * 1024);  // 1 MB
 #endif
+    pool_ = std::make_unique<MemoryPool>(allocator_, 1024 * 1024);  // 1 MB
   }
 
   std::shared_ptr<DeviceAllocator> allocator_;
