@@ -26,7 +26,8 @@ MemoryPool::MemoryPool(std::shared_ptr<DeviceAllocator> allocator,
 
 MemoryPool::~MemoryPool() {
   // すべてのプールブロックを解放
-  for (void* ptr : pool_blocks_) {
+  for (const auto& [ptr, size] : pool_blocks_) {
+    (void)size;  // size は deallocate では不要だが、ペアとして管理
     allocator_->deallocate(ptr);
   }
 }
@@ -40,7 +41,7 @@ void* MemoryPool::allocate(size_t size) {
 
   // アライメント調整
   const size_t alignment = allocator_->alignment();
-  size_t aligned_size = (size + alignment - 1) & ~(alignment - 1);
+  const size_t aligned_size = (size + alignment - 1) & ~(alignment - 1);
 
   // Best-fit: 要求サイズ以上の最小ブロックを検索
   auto it = free_blocks_.lower_bound(aligned_size);
@@ -61,6 +62,9 @@ void* MemoryPool::allocate(size_t size) {
   void* ptr = it->second;
   size_t block_size = it->first;
   free_blocks_.erase(it);
+  free_blocks_by_address_.erase(ptr);  // 補助インデックスからも削除
+
+  size_t actual_allocated_size;  // 実際に割り当てられるサイズ
 
   // ブロックを分割
   if (block_size > aligned_size + kMinBlockSize) {
@@ -69,17 +73,21 @@ void* MemoryPool::allocate(size_t size) {
         static_cast<char*>(ptr) + static_cast<ptrdiff_t>(aligned_size);
     size_t remaining_size = block_size - aligned_size;
     free_blocks_.insert({remaining_size, remaining_ptr});
+    free_blocks_by_address_[remaining_ptr] =
+        remaining_size;  // 補助インデックスに追加
+
+    actual_allocated_size = aligned_size;  // 要求サイズ通り
   } else {
     // 分割しない（余剰が小さすぎる）
-    aligned_size = block_size;
+    actual_allocated_size = block_size;  // ブロック全体を使用
   }
 
   // 割り当て情報を記録
-  allocated_blocks_[ptr] = BlockInfo{ptr, aligned_size, false};
+  allocated_blocks_[ptr] = BlockInfo{ptr, actual_allocated_size};
 
   // 統計情報の更新
-  stats_.total_allocated += aligned_size;
-  stats_.current_usage += aligned_size;
+  stats_.total_allocated += actual_allocated_size;
+  stats_.current_usage += actual_allocated_size;
   stats_.peak_usage = std::max(stats_.peak_usage, stats_.current_usage);
   stats_.num_allocations++;
   stats_.num_pool_allocations++;
@@ -112,23 +120,54 @@ void MemoryPool::deallocate(void* ptr) {
   void* merged_ptr = info.ptr;
   size_t merged_size = info.size;
 
-  // 前方のブロックとマージ
-  auto prev = findPreviousFreeBlock(merged_ptr);
-  if (prev != free_blocks_.end()) {
-    merged_ptr = prev->second;
-    merged_size += prev->first;
-    free_blocks_.erase(prev);
+  // 前方のブロックとマージ (O(log N))
+  auto addr_it = free_blocks_by_address_.lower_bound(merged_ptr);
+  if (addr_it != free_blocks_by_address_.begin()) {
+    --addr_it;
+    void* prev_ptr = addr_it->first;
+    size_t prev_size = addr_it->second;
+    void* prev_end =
+        static_cast<char*>(prev_ptr) + static_cast<ptrdiff_t>(prev_size);
+
+    if (prev_end == merged_ptr) {
+      // マージ可能
+      merged_ptr = prev_ptr;
+      merged_size += prev_size;
+
+      // 両方のインデックスから削除
+      auto range = free_blocks_.equal_range(prev_size);
+      for (auto it = range.first; it != range.second; ++it) {
+        if (it->second == prev_ptr) {
+          free_blocks_.erase(it);
+          break;
+        }
+      }
+      free_blocks_by_address_.erase(prev_ptr);
+    }
   }
 
-  // 後方のブロックとマージ
-  auto next = findNextFreeBlock(merged_ptr, merged_size);
-  if (next != free_blocks_.end()) {
-    merged_size += next->first;
-    free_blocks_.erase(next);
+  // 後方のブロックとマージ (O(log N))
+  void* next_ptr =
+      static_cast<char*>(merged_ptr) + static_cast<ptrdiff_t>(merged_size);
+  auto next_it = free_blocks_by_address_.find(next_ptr);
+  if (next_it != free_blocks_by_address_.end()) {
+    size_t next_size = next_it->second;
+    merged_size += next_size;
+
+    // 両方のインデックスから削除
+    auto range = free_blocks_.equal_range(next_size);
+    for (auto it = range.first; it != range.second; ++it) {
+      if (it->second == next_ptr) {
+        free_blocks_.erase(it);
+        break;
+      }
+    }
+    free_blocks_by_address_.erase(next_ptr);
   }
 
   // マージされたブロックを登録
   free_blocks_.insert({merged_size, merged_ptr});
+  free_blocks_by_address_[merged_ptr] = merged_size;
 }
 
 void MemoryPool::reset() {
@@ -137,10 +176,12 @@ void MemoryPool::reset() {
   // すべての割り当てをクリア
   allocated_blocks_.clear();
   free_blocks_.clear();
+  free_blocks_by_address_.clear();
 
-  // プールを再初期化
-  for (void* ptr : pool_blocks_) {
-    free_blocks_.insert({pool_size_, ptr});
+  // プールを再初期化（各ブロックの実際のサイズを使用）
+  for (const auto& [ptr, size] : pool_blocks_) {
+    free_blocks_.insert({size, ptr});
+    free_blocks_by_address_[ptr] = size;
   }
 
   // 統計情報をリセット（一部は保持）
@@ -158,29 +199,11 @@ void MemoryPool::allocateNewPool(size_t size) {
     throw std::bad_alloc();
   }
 
-  pool_blocks_.push_back(ptr);
+  pool_blocks_.push_back({ptr, size});  // サイズも記録
   free_blocks_.insert({size, ptr});
+  free_blocks_by_address_[ptr] = size;
 
   stats_.num_device_allocations++;
-}
-
-std::multimap<size_t, void*>::iterator MemoryPool::findPreviousFreeBlock(
-    void* ptr) {
-  return std::find_if(
-      free_blocks_.begin(), free_blocks_.end(), [ptr](const auto& block) {
-        const void* block_end = static_cast<const char*>(block.second) +
-                                static_cast<ptrdiff_t>(block.first);
-        return block_end == ptr;
-      });
-}
-
-std::multimap<size_t, void*>::iterator MemoryPool::findNextFreeBlock(
-    void* ptr, size_t size) {
-  const void* block_end =
-      static_cast<const char*>(ptr) + static_cast<ptrdiff_t>(size);
-  return std::find_if(
-      free_blocks_.begin(), free_blocks_.end(),
-      [block_end](const auto& block) { return block.second == block_end; });
 }
 
 }  // namespace gradflow

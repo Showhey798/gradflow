@@ -137,9 +137,8 @@ class MemoryPool {
    * @brief ブロック情報
    */
   struct BlockInfo {
-    void* ptr;     ///< ブロックの開始アドレス
-    size_t size;   ///< ブロックサイズ (bytes)
-    bool is_free;  ///< 空きブロックかどうか
+    void* ptr;    ///< ブロックの開始アドレス
+    size_t size;  ///< ブロックサイズ (bytes)
   };
 
   /**
@@ -149,24 +148,6 @@ class MemoryPool {
    */
   void allocateNewPool(size_t size);
 
-  /**
-   * @brief 前方の隣接する空きブロックを検索
-   *
-   * @param ptr ブロックの開始アドレス
-   * @return イテレータ（見つからない場合は end()）
-   */
-  std::multimap<size_t, void*>::iterator findPreviousFreeBlock(void* ptr);
-
-  /**
-   * @brief 後方の隣接する空きブロックを検索
-   *
-   * @param ptr ブロックの開始アドレス
-   * @param size ブロックサイズ
-   * @return イテレータ（見つからない場合は end()）
-   */
-  std::multimap<size_t, void*>::iterator findNextFreeBlock(void* ptr,
-                                                           size_t size);
-
   std::shared_ptr<DeviceAllocator> allocator_;  ///< 基底アロケータ
   size_t pool_size_;                            ///< プールサイズ
 
@@ -174,11 +155,14 @@ class MemoryPool {
   // multimap を使用することで Best-fit が O(log N) で実現可能
   std::multimap<size_t, void*> free_blocks_;
 
+  // アドレスベースの補助インデックス (O(log N) で隣接検索を実現)
+  std::map<void*, size_t> free_blocks_by_address_;
+
   // 割り当て済みブロックの管理
   std::unordered_map<void*, BlockInfo> allocated_blocks_;
 
-  // プールとして確保された大きなメモリブロック
-  std::vector<void*> pool_blocks_;
+  // プールとして確保された大きなメモリブロック (ptr, size)
+  std::vector<std::pair<void*, size_t>> pool_blocks_;
 
   // 統計情報
   MemoryPoolStats stats_;
