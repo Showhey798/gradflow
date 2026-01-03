@@ -165,21 +165,30 @@
 **AI としては承認可能な品質**に達しています。すべての完了基準を満たしており、指摘事項は将来的なリファクタリングとして対応可能です。ユーザーの最終レビューとマージ判断をお待ちしています。
 
 ## Phase 3: Metal GPU サポート
-### ステータス: 🚧 開始
+### ステータス: 🚧 進行中
+
+### 完了済み
+- ✅ 3.1 Metal Device と Allocator (Week 1)
+  - Issue #14: 完了（PR #66: マージ済み）
+  - ステータス: Metal GPU のデバイス抽象化とメモリ割り当て実装完了
+  - 設計書: `docs/ISSUE_14_metal_device_design.md`
 
 ### 進行中
-- 🚧 3.1 Metal Device と Allocator (Week 1)
-  - Issue #14: 設計フェーズ完了
-  - ステータス: 設計書作成完了、実装開始準備中
-  - 設計書: `docs/ISSUE_14_metal_device_design.md`
+- 🚧 3.2 Metal Compute Shader の実装 (Week 1-2)
+  - Issue #15: 実装完了（PR #67: レビュー待ち）
+  - ステータス: すべてのテスト pass（10/10）、ユーザーレビュー待ち
+  - 実装内容: Elementwise 演算、Reduction 演算、MPS MatMul
+  - パフォーマンス: GPU が CPU より 2.8x 高速（10M 要素の add 演算）
+  - 設計書: `docs/ISSUE_15_metal_kernels_design.md`
 
 ## 次のステップ
 1. ✅ Variable クラスの実装完了（PR #59: ユーザーレビュー待ち）
 2. ✅ 基本演算の Operation 実装完了（PR #60: ユーザーレビュー待ち）
-3. 🚧 **活性化関数の実装** ← Phase 2 完了待ち（PR #61: AI レビュー完了、ユーザーレビュー待ち）
-4. 🚧 **Metal Device と Allocator** ← 現在ここ（Issue #14: 設計完了、実装開始）
-5. ⏭️ Phase 2.5: 損失関数の実装
-6. ⏭️ Phase 2.6: Optimizer の実装
+3. ✅ 活性化関数の実装（PR #61: AI レビュー完了、ユーザーレビュー待ち）
+4. ✅ Metal Device と Allocator（PR #66: マージ済み）
+5. 🚧 **Metal Compute Shader の実装** ← 現在ここ（PR #67: レビュー待ち）
+6. ⏭️ Phase 3.3: MemoryPool の実装
+7. ⏭️ Phase 3.4: Metal での自動微分
 
 ## リスクと課題
 現在の課題: なし（すべて順調）
